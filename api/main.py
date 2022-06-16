@@ -49,22 +49,12 @@ if __name__ == '__main__':
                                 environ.get('DB_ECHO'), None
                             ),
                             url='postgresql+asyncpg://'
-                            '%(username)s:%(password)s@'
-                            '%(endpoint)s:%(port)s/%(name)s'
+                            '%(user)s:%(passw)s@%(host)s:%(port)s/%(name)s'
                             % dict(
                                 name=environ.get('DB_NAME', 'postgres'),
-                                username=environ.get(
-                                    'DB_USERNAME',
-                                    'postgres',
-                                ),
-                                password=environ.get(
-                                    'DB_PASSWORD',
-                                    'postgres',
-                                ),
-                                endpoint=environ.get(
-                                    'DB_ENDPOINT',
-                                    'localhost',
-                                ),
+                                user=environ.get('DB_USERNAME', 'postgres'),
+                                passw=environ.get('DB_PASSWORD', 'postgres'),
+                                host=environ.get('DB_HOST', 'localhost'),
                                 port=environ.get('DB_PORT', 5432),
                             ),
                             poolclass=AsyncAdaptedQueuePool,
