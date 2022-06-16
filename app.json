@@ -1,0 +1,6 @@
+{
+  "name": "SORT API",
+  "image": "heroku/python",
+  "keywords": ["python", "API", "SQLAlchemy"],
+  "addons": ["heroku-postgresql"]
+}
