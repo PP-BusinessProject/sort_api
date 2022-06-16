@@ -7,13 +7,11 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio.engine import create_async_engine
 from sqlalchemy.ext.asyncio.scoping import async_scoped_session
 from sqlalchemy.ext.asyncio.session import AsyncSession
-from sqlalchemy.log import InstanceLogger
 from sqlalchemy.orm.session import sessionmaker
 from sqlalchemy.pool.impl import AsyncAdaptedQueuePool
 from starlette.middleware import Middleware
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.routing import Route
-from uvicorn import run
 
 from .callbacks.create_visual_schema import create_visual_schema
 from .methods._exception_handlers import sqlalchemy_error_handler
@@ -72,9 +70,4 @@ app = FastAPI(
         ),
         Route('/{route}/{option}', endpoint),
     ],
-)
-run(
-    app,
-    host=environ.get('HOST', 'localhost'),
-    port=int(environ.get('PORT', 8000)),
 )
