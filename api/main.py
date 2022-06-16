@@ -3,7 +3,6 @@ from logging import basicConfig
 from os import environ
 
 from fastapi.applications import FastAPI
-from msgpack_asgi._middleware import MessagePackMiddleware
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio.engine import create_async_engine
 from sqlalchemy.ext.asyncio.scoping import async_scoped_session
@@ -38,7 +37,6 @@ if __name__ == '__main__':
         middleware=(
             Middleware(BaseHTTPMiddleware, dispatch=process_time_middleware),
             Middleware(BaseHTTPMiddleware, dispatch=logger_middleware),
-            Middleware(MessagePackMiddleware),
             # Middleware(HTTPSRedirectMiddleware),
             # Middleware(GZipMiddleware, minimum_size=1000),
             Middleware(
