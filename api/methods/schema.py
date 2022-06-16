@@ -15,4 +15,4 @@ async def schema(request: Request, /) -> Response:
         raise HTTPException(
             HTTP_500_INTERNAL_SERVER_ERROR, 'Schema path does not exist.'
         )
-    return FileResponse(schema_path, filename=schema_path.name)
+    return FileResponse(schema_path)
