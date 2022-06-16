@@ -44,18 +44,12 @@ app = FastAPI(
             bind=async_scoped_session(
                 sessionmaker(
                     create_async_engine(
-                        echo=InstanceLogger._echo_map.get(
-                            environ.get('DB_ECHO'), None
-                        ),
+                        echo=environ.get('LOGGING', '').upper() == 'DEBUG',
                         url='postgresql+asyncpg://'
-                        '%(user)s:%(passw)s@%(host)s:%(port)s/%(name)s'
-                        % dict(
-                            name=environ.get('DB_NAME', 'postgres'),
-                            user=environ.get('DB_USERNAME', 'postgres'),
-                            passw=environ.get('DB_PASSWORD', 'postgres'),
-                            host=environ.get('DB_HOST', 'localhost'),
-                            port=environ.get('DB_PORT', 5432),
-                        ),
+                        + environ.get(
+                            'DATABASE_URL',
+                            'postgres:postgres@localhost:5432/postgres',
+                        ).split('://')[-1],
                         poolclass=AsyncAdaptedQueuePool,
                         pool_size=1,
                         max_overflow=-1,
