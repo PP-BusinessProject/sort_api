@@ -1,6 +1,7 @@
 asyncpg==0.25.0
 babel==2.10.1
 fastapi==0.78.0
+gunicorn==20.1.0
 inflect==5.6.0
 orjson==3.7.2
 python-dateutil==2.8.2
