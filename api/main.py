@@ -26,63 +26,61 @@ from .middleware.misc_middleware import (
 from .models.base_interface import Base, DefaultORJSONResponse
 
 #
-if __name__ == '__main__':
-    basicConfig(level=environ.get('LOGGING', 'INFO'))
-    app = FastAPI(
-        version='0.0.1',
-        docs_url='/',
-        default_response_class=DefaultORJSONResponse,
-        on_startup=(lambda: create_visual_schema(Base.metadata),),
-        exception_handlers={SQLAlchemyError: sqlalchemy_error_handler},
-        middleware=(
-            Middleware(BaseHTTPMiddleware, dispatch=process_time_middleware),
-            Middleware(BaseHTTPMiddleware, dispatch=logger_middleware),
-            # Middleware(HTTPSRedirectMiddleware),
-            # Middleware(GZipMiddleware, minimum_size=1000),
-            Middleware(
-                AsyncSQLAlchemyMiddleware,
-                metadata=Base.metadata,
-                bind=async_scoped_session(
-                    sessionmaker(
-                        create_async_engine(
-                            echo=InstanceLogger._echo_map.get(
-                                environ.get('DB_ECHO'), None
-                            ),
-                            url='postgresql+asyncpg://'
-                            '%(user)s:%(passw)s@%(host)s:%(port)s/%(name)s'
-                            % dict(
-                                name=environ.get('DB_NAME', 'postgres'),
-                                user=environ.get('DB_USERNAME', 'postgres'),
-                                passw=environ.get('DB_PASSWORD', 'postgres'),
-                                host=environ.get('DB_HOST', 'localhost'),
-                                port=environ.get('DB_PORT', 5432),
-                            ),
-                            poolclass=AsyncAdaptedQueuePool,
-                            pool_size=1,
-                            max_overflow=-1,
-                            pool_recycle=3600,
-                            pool_pre_ping=True,
-                            pool_use_lifo=True,
-                            connect_args=dict(server_settings=dict(jit='off')),
+basicConfig(level=environ.get('LOGGING', 'INFO'))
+app = FastAPI(
+    version='0.0.1',
+    docs_url='/',
+    default_response_class=DefaultORJSONResponse,
+    on_startup=(lambda: create_visual_schema(Base.metadata),),
+    exception_handlers={SQLAlchemyError: sqlalchemy_error_handler},
+    middleware=(
+        Middleware(BaseHTTPMiddleware, dispatch=process_time_middleware),
+        Middleware(BaseHTTPMiddleware, dispatch=logger_middleware),
+        # Middleware(HTTPSRedirectMiddleware),
+        # Middleware(GZipMiddleware, minimum_size=1000),
+        Middleware(
+            AsyncSQLAlchemyMiddleware,
+            metadata=Base.metadata,
+            bind=async_scoped_session(
+                sessionmaker(
+                    create_async_engine(
+                        echo=InstanceLogger._echo_map.get(
+                            environ.get('DB_ECHO'), None
                         ),
-                        class_=AsyncSession,
-                        expire_on_commit=False,
-                        future=True,
+                        url='postgresql+asyncpg://'
+                        '%(user)s:%(passw)s@%(host)s:%(port)s/%(name)s'
+                        % dict(
+                            name=environ.get('DB_NAME', 'postgres'),
+                            user=environ.get('DB_USERNAME', 'postgres'),
+                            passw=environ.get('DB_PASSWORD', 'postgres'),
+                            host=environ.get('DB_HOST', 'localhost'),
+                            port=environ.get('DB_PORT', 5432),
+                        ),
+                        poolclass=AsyncAdaptedQueuePool,
+                        pool_size=1,
+                        max_overflow=-1,
+                        pool_recycle=3600,
+                        pool_pre_ping=True,
+                        pool_use_lifo=True,
+                        connect_args=dict(server_settings=dict(jit='off')),
                     ),
-                    scopefunc=current_task,
+                    class_=AsyncSession,
+                    expire_on_commit=False,
+                    future=True,
                 ),
+                scopefunc=current_task,
             ),
         ),
-        routes=[
-            Route(
-                *('/{route}', endpoint),
-                methods=['GET', 'POST', 'PUT', 'DELETE']
-            ),
-            Route('/{route}/{option}', endpoint),
-        ],
-    )
-    run(
-        app,
-        host=environ.get('HOST', 'localhost'),
-        port=int(environ.get('PORT', 8000)),
-    )
+    ),
+    routes=[
+        Route(
+            *('/{route}', endpoint), methods=['GET', 'POST', 'PUT', 'DELETE']
+        ),
+        Route('/{route}/{option}', endpoint),
+    ],
+)
+run(
+    app,
+    host=environ.get('HOST', 'localhost'),
+    port=int(environ.get('PORT', 8000)),
+)
