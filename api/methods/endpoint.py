@@ -339,7 +339,12 @@ async def endpoint(request: Request, /) -> Response:
                     HTTP_400_BAD_REQUEST, 'Offset is invalid.'
                 ) from _
 
-        if (option := request.path_params.get('option')) is None:
+        option: str = request.path_params.get('option', '').lower()
+        if option == 'count':
+            statement = select(count()).select_from(statement)
+            return Response(str(await Session.scalar(statement)))
+
+        elif not option or option == 'stream':
             if orderings := [
                 column.asc() if parameter.startswith('asc') else column.desc()
                 for parameter, values in query_parameters.items()
@@ -348,6 +353,12 @@ async def endpoint(request: Request, /) -> Response:
                 if (column := table.columns.get(value)) is not None
             ]:
                 statement = statement.order_by(*orderings)
+
+            if not option:
+                if column_fields or model is None:
+                    result = await Session.execute(statement)
+                    return response(list(map(list, result.all())))
+                return response((await Session.scalars(statement)).all())
 
             async def serialize_result():
                 async for item in await function(statement):
@@ -360,7 +371,5 @@ async def endpoint(request: Request, /) -> Response:
             )
             return StreamingResponse(serialize_result())
 
-        if option == 'count':
-            statement = select(count()).select_from(statement)
-            return Response(str(await Session.scalar(statement)))
-        return Response(None, HTTP_406_NOT_ACCEPTABLE)
+        else:
+            return Response(None, HTTP_406_NOT_ACCEPTABLE)

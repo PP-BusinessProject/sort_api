@@ -12,6 +12,7 @@ from sqlalchemy.pool.impl import AsyncAdaptedQueuePool
 from starlette.middleware import Middleware
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.routing import Route
+from uvicorn import run
 
 from .callbacks.create_visual_schema import create_visual_schema
 from .methods._exception_handlers import sqlalchemy_error_handler
@@ -66,8 +67,12 @@ app = FastAPI(
     ),
     routes=[
         Route(
-            *('/{route}', endpoint), methods=['GET', 'POST', 'PUT', 'DELETE']
+            *('/{route}', endpoint),
+            methods=['GET', 'POST', 'PUT', 'DELETE'],
         ),
         Route('/{route}/{option}', endpoint),
     ],
 )
+
+if 'DATABASE_URL' not in environ:
+    run(app, host='localhost', port=8000)
