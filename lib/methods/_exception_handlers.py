@@ -26,7 +26,7 @@ async def sqlalchemy_error_handler(
                 sqlalchemy_exception=sa_exception
                 or exception.__class__.__name__,
                 dialect_exception=dialect_exception,
-                message=text,
+                detail=text,
             ).items()
             if v is not None
         },

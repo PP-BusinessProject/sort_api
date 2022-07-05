@@ -93,10 +93,12 @@ async def main(
                 doc=column.doc,
                 required=column.default is None
                 and (not column.nullable or not column.autoincrement),
-                nullable=column.nullable,
+                nullable=(column.default is not None and default is None)
+                or column.nullable,
                 compare=type in (int, float, str)
                 and column in mapper.primary_key,
             )
+
         relationship: RelationshipProperty
         for relationship in mapper.relationships:
             for _key, mapper in registry.items():
@@ -124,4 +126,4 @@ if __name__ == '__main__':
 
     basicConfig(level='DEBUG')
     set_event_loop_policy(WindowsSelectorEventLoopPolicy())
-    run(main(Base, single_path=Path('flex')))
+    run(main(Base, single_path=Path()))

@@ -163,8 +163,6 @@ async def endpoint(request: Request, /) -> Response:
         ) -> dict[str, Any]:
             column_keys, relationship_keys = get_keys(model)
             if isinstance(item, dict):
-                if model not in modify_tables:
-                    modify_tables[model] = []
                 for field, value in dict(item).items():
                     if field in column_keys:
                         column = column_keys[field]
@@ -200,23 +198,29 @@ async def endpoint(request: Request, /) -> Response:
                             f'Mapper for table "{model.name}" is not present.',
                         )
                     elif relationship := relationship_keys.get(field):
-                        raise HTTPException(
-                            HTTP_501_NOT_IMPLEMENTED,
-                            'Relationships modification is not supported.',
-                        )
-                        # try:
-                        #     type = relationship.entity.class_
-                        #     modify_item(type, value, (*field_chain, field))
-                        # except AttributeError as _:
-                        #     raise HTTPException(
-                        #         HTTP_500_INTERNAL_SERVER_ERROR,
-                        #         'Could not infer type for relationship: '
-                        #         f'{relationship}',
-                        #     ) from _
-                    del item[field]
-                modify_tables[model].append(item)
+                        if not value:
+                            del item[field]
+                            continue
+                        # raise HTTPException(
+                        #     HTTP_501_NOT_IMPLEMENTED,
+                        #     'Relationships modification is not supported.',
+                        # )
+                        try:
+                            item[field] = modify_item(
+                                relationship.entity.class_,
+                                value,
+                                (*field_chain, field),
+                            )
+                        except AttributeError as _:
+                            raise HTTPException(
+                                HTTP_500_INTERNAL_SERVER_ERROR,
+                                'Could not infer type for relationship: '
+                                f'{relationship}',
+                            ) from _
+                return model(**item)
 
             elif item:
+                items = []
                 for index, item in enumerate(item):
                     if not isinstance(item, dict):
                         raise HTTPException(
@@ -224,14 +228,23 @@ async def endpoint(request: Request, /) -> Response:
                             f'%s element #{index} should be a dictionary.'
                             % '.'.join((route, *field_chain)),
                         )
-                    modify_item(model, item)
+                    items.append(modify_item(model, item, field_chain))
+                return items
 
-        modify_tables: dict[Table, list[dict[str, Any]]] = {}
-        modify_item(model or table, body)
         async with Session.begin():
-            method = insert if request.method == 'POST' else update
-            for table, values in modify_tables.items():
-                await Session.execute(method(table, values))
+            if request.method == 'POST':
+                if isinstance(body, dict):
+                    Session.add(modify_item(model or table, body))
+                elif isinstance(body, Iterable):
+                    for item in body:
+                        Session.add(modify_item(model or table, item))
+            else:
+                if isinstance(body, dict):
+                    await Session.merge(modify_item(model or table, body))
+                elif isinstance(body, Iterable):
+                    for item in body:
+                        await Session.merge(modify_item(model or table, item))
+
         return Response(None, HTTP_204_NO_CONTENT)
 
     else:

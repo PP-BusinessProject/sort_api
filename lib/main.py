@@ -31,7 +31,7 @@ from .models.base_interface import Base, DefaultORJSONResponse
 
 # print(*(_ for _ in Base.metadata.tables if not _.startswith('_')), sep='\n')
 basicConfig(level=environ.get('LOGGING', 'INFO'))
-schema_path: Final[Path] = Path('./api/schema.png').resolve()
+schema_path: Final[Path] = Path('./lib/schema.png').resolve()
 app = FastAPI(
     version='0.0.1',
     docs_url=None,
