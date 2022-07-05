@@ -117,10 +117,10 @@ async def main(
 
 
 if __name__ == '__main__':
-    from lib.models.base_interface import Base, serialize
+    from .models.base_interface import Base, serialize
 
     if TYPE_CHECKING:
-        from lib.models.base_interface import _DeclarativeBase
+        from .models.base_interface import _DeclarativeBase
 
     basicConfig(level='DEBUG')
     set_event_loop_policy(WindowsSelectorEventLoopPolicy())

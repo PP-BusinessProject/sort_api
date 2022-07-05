@@ -17,19 +17,17 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.routing import Route
 from uvicorn import run
 
-from ..lib.callbacks.create_visual_schema import create_visual_schema
-from ..lib.methods._exception_handlers import sqlalchemy_error_handler
-from ..lib.methods.endpoint import endpoint
-from ..lib.methods.schema import schema
-from ..lib.middleware.async_sqlalchemy_middleware import (
-    AsyncSQLAlchemyMiddleware,
-)
-from ..lib.middleware.misc_middleware import (
+from .callbacks.create_visual_schema import create_visual_schema
+from .methods._exception_handlers import sqlalchemy_error_handler
+from .methods.endpoint import endpoint
+from .methods.schema import schema
+from .middleware.async_sqlalchemy_middleware import AsyncSQLAlchemyMiddleware
+from .middleware.misc_middleware import (
     AddToScopeMiddleware,
     logger_middleware,
     process_time_middleware,
 )
-from ..lib.models.base_interface import Base, DefaultORJSONResponse
+from .models.base_interface import Base, DefaultORJSONResponse
 
 # print(*(_ for _ in Base.metadata.tables if not _.startswith('_')), sep='\n')
 basicConfig(level=environ.get('LOGGING', 'INFO'))
