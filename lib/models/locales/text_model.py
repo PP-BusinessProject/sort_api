@@ -32,7 +32,7 @@ class TextModel(Timestamped, Base):
         'RelationshipProperty[list[LocaleTextModel]]'
     ] = relationship(
         'LocaleTextModel',
-        back_populates='text_',
+        back_populates='text',
         lazy='noload',
         cascade='save-update, merge, expunge, delete, delete-orphan',
         uselist=True,

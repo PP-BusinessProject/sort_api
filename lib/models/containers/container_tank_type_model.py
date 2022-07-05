@@ -4,10 +4,9 @@ from typing import TYPE_CHECKING, Final
 from sqlalchemy.orm import relationship
 from sqlalchemy.orm.relationships import RelationshipProperty
 from sqlalchemy.sql.schema import Column, ForeignKey
-from sqlalchemy.sql.sqltypes import Integer, SmallInteger, String
+from sqlalchemy.sql.sqltypes import Integer, SmallInteger, String, Interval
 
 from .._mixins import Timestamped
-from .._types import TimeDelta
 from ..base_interface import Base
 from ..misc.measurement_model import MeasurementModel
 
@@ -48,7 +47,7 @@ class ContainerTankTypeModel(Timestamped, Base):
     )
     clearing_period: Final[Column[timedelta]] = Column(
         'ClearingPeriod',
-        TimeDelta,
+        Interval(second_precision=True),
         nullable=False,
         default=timedelta(),
         key='clearing_period',

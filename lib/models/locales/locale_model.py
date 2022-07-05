@@ -1,12 +1,11 @@
 from typing import TYPE_CHECKING, Final
 
-from babel.core import Locale
 from sqlalchemy.orm import relationship
 from sqlalchemy.orm.relationships import RelationshipProperty
 from sqlalchemy.sql.schema import Column
-from sqlalchemy_utils.types.locale import LocaleType
 
 from .._mixins import Timestamped
+from .._types import CaseInsensitiveUnicode
 from ..base_interface import Base
 
 if TYPE_CHECKING:
@@ -14,16 +13,16 @@ if TYPE_CHECKING:
 
 
 class LocaleModel(Timestamped, Base):
-    locale: Final[Column[Locale]] = Column(
-        'Locale',
-        LocaleType,
+    locale_alpha_2: Final[Column[str]] = Column(
+        'LocaleAlpha2',
+        CaseInsensitiveUnicode(2),
         primary_key=True,
-        key='locale',
+        key='locale_alpha_2',
     )
 
     texts: Final['RelationshipProperty[list[LocaleTextModel]]'] = relationship(
         'LocaleTextModel',
-        back_populates='locale_',
+        back_populates='locale',
         lazy='noload',
         cascade='save-update, merge, expunge, delete, delete-orphan',
         uselist=True,

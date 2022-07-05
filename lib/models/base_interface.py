@@ -1,4 +1,3 @@
-"""The SQLAlchemy base for :class:`AdBotClient` models."""
 from __future__ import annotations
 
 from contextlib import suppress
@@ -21,14 +20,13 @@ from typing import (
 )
 
 from inflect import engine
+from orjson import dumps
 from pydantic.main import BaseConfig, BaseModel, create_model
-from simplejson import dumps
 from sqlalchemy.orm.decl_api import declarative_base, declared_attr
 from sqlalchemy.orm.properties import ColumnProperty
 from sqlalchemy.orm.relationships import RelationshipProperty
 from sqlalchemy.orm.state import InstanceState
 from sqlalchemy.sql.schema import Column
-from sqlalchemy_utils.types.phone_number import PhoneNumber
 from starlette.responses import JSONResponse
 from typing_extensions import Self
 
@@ -52,7 +50,7 @@ def serialize(
 
 @overload
 def serialize(
-    value: Union[bytes, date, time, datetime, PhoneNumber],
+    value: Union[bytes, date, time, datetime],
     /,
     *,
     encoding: str = 'utf8',
@@ -116,8 +114,6 @@ def serialize(value: Any, /, *, encoding: str = 'utf8') -> Serializable:
         return value.total_seconds()
     elif isinstance(value, (date, time, datetime)):
         return value.isoformat()
-    elif isinstance(value, PhoneNumber):
-        return value.e164
     elif isinstance(value, Enum):
         return value.value
     elif isinstance(value, dict):
@@ -239,13 +235,7 @@ class BaseInterface(object):
         return serialize(self)
 
     def __str__(self: Self, /) -> str:
-        return dumps(
-            self.json,
-            skipkeys=False,
-            check_circular=False,
-            separators=(',', ':'),
-            namedtuple_as_object=False,
-        )
+        return str(self.json)
 
     def __repr__(self: Self, /) -> str:
         return f'{self.__class__.__name__}(%s)' % ', '.join(

@@ -1,6 +1,5 @@
 from typing import Final
 
-from babel.core import Locale
 from sqlalchemy.orm import relationship
 from sqlalchemy.orm.relationships import RelationshipProperty
 from sqlalchemy.sql.schema import CheckConstraint, Column, ForeignKey
@@ -20,33 +19,33 @@ class LocaleTextModel(Timestamped, Base):
         primary_key=True,
         key='key',
     )
-    locale: Final[Column[Locale]] = Column(
-        'Locale',
-        LocaleModel.locale.type,
+    locale_alpha_2: Final[Column[str]] = Column(
+        'LocaleAlpha2',
+        LocaleModel.locale_alpha_2.type,
         ForeignKey(
-            LocaleModel.locale,
+            LocaleModel.locale_alpha_2,
             onupdate='CASCADE',
             ondelete='RESTRICT',
         ),
         primary_key=True,
-        key='locale',
+        key='locale_alpha_2',
     )
-    text: Final[Column[str]] = Column(
-        'Text',
+    fallback_text: Final[Column[str]] = Column(
+        'FallbackText',
         String,
-        CheckConstraint('"Text" <> \'\''),
+        CheckConstraint('"FallbackText" <> \'\''),
         nullable=False,
-        key='text',
+        key='fallback_text',
     )
 
-    locale_: Final['RelationshipProperty[LocaleModel]'] = relationship(
+    locale: Final['RelationshipProperty[LocaleModel]'] = relationship(
         'LocaleModel',
         back_populates='texts',
         lazy='noload',
         cascade='save-update',
         uselist=False,
     )
-    text_: Final['RelationshipProperty[TextModel]'] = relationship(
+    text: Final['RelationshipProperty[TextModel]'] = relationship(
         'TextModel',
         back_populates='locales',
         lazy='noload',

@@ -1,7 +1,7 @@
 """The module that provides a `GroupModel`."""
 
 
-from enum import IntFlag, auto
+from enum import IntFlag, auto, unique
 from typing import Final, Optional, Type
 
 from sqlalchemy import CheckConstraint
@@ -11,16 +11,16 @@ from sqlalchemy.orm.relationships import RelationshipProperty
 from sqlalchemy.sql.elements import ClauseElement
 from sqlalchemy.sql.expression import and_, literal_column
 from sqlalchemy.sql.schema import Column, ForeignKey
-from sqlalchemy.sql.sqltypes import Boolean
+from sqlalchemy.sql.sqltypes import Boolean, Enum
 from typing_extensions import Self
 
 from .._mixins import Timestamped
-from .._types import IntEnumType
 from ..base_interface import Base
 from .group_model import GroupModel
 from .user_model import UserModel
 
 
+@unique
 class GroupRights(IntFlag):
     """The rights provided for a `GroupMemberModel` in a `GroupModel`."""
 
@@ -78,8 +78,8 @@ class GroupMemberModel(Timestamped, Base):
     )
     rights: Final[Column[GroupRights]] = Column(
         'Rights',
-        IntEnumType(GroupRights),
-        default=GroupRights.OPEN_CONTAINERS,
+        Enum(GroupRights, create_constraint=True),
+        default=GroupRights.OPEN_CONTAINERS | GroupRights.EDIT_BONUSES,
         nullable=False,
         key='rights',
     )

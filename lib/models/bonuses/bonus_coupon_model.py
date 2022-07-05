@@ -4,7 +4,7 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.orm.relationships import RelationshipProperty
 from sqlalchemy.sql.expression import and_, literal_column
 from sqlalchemy.sql.schema import CheckConstraint, Column, ForeignKey
-from sqlalchemy.sql.sqltypes import Boolean, LargeBinary
+from sqlalchemy.sql.sqltypes import Boolean, String
 
 from .._mixins import Timestamped
 from ..base_interface import Base
@@ -20,9 +20,9 @@ class BonusCouponModel(Timestamped, Base):
         primary_key=True,
         key='bonus_id',
     )
-    hash: Final[Column[bytes]] = Column(
+    hash: Final[Column[str]] = Column(
         'Hash',
-        LargeBinary(64),
+        String(64),
         nullable=False,
         key='hash',
     )

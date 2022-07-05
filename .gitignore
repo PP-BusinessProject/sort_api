@@ -1,4 +1,3 @@
-
 # Created by https://www.gitignore.io/api/osx,linux,python,windows,pycharm,visualstudiocode
 
 ### Linux ###
@@ -125,7 +124,6 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
 lib64/
 parts/
 sdist/
@@ -209,7 +207,7 @@ venv.bak/
 .mypy_cache/
 
 # typings
-typings/
+/typings/
 
 ### VisualStudioCode ###
 .vscode/

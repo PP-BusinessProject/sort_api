@@ -5,11 +5,10 @@ from sqlalchemy.orm.decl_api import declared_attr
 from sqlalchemy.sql.elements import ClauseElement
 from sqlalchemy.sql.expression import func
 from sqlalchemy.sql.schema import CheckConstraint, Column
-from sqlalchemy.sql.sqltypes import String
-from sqlalchemy_utils.types.email import EmailType
-from sqlalchemy_utils.types.phone_number import PhoneNumber, PhoneNumberType
+from sqlalchemy.sql.sqltypes import BigInteger, String
 from typing_extensions import Self
 
+from ._types import CaseInsensitiveUnicode
 from .base_interface import BaseInterface
 
 
@@ -34,10 +33,10 @@ class UserInterface(BaseInterface):
         )
 
     @declared_attr
-    def phone_number(self: Self, /) -> Column[PhoneNumber]:
+    def phone_number(self: Self, /) -> Column[int]:
         return Column(
             'PhoneNumber',
-            PhoneNumberType('UA', 20),
+            BigInteger,
             index=True,
             unique=True,
             nullable=False,
@@ -48,7 +47,7 @@ class UserInterface(BaseInterface):
     def email(self: Self, /) -> Column[Optional[str]]:
         return Column(
             'Email',
-            EmailType,
+            CaseInsensitiveUnicode,
             index=True,
             unique=True,
             key='email',

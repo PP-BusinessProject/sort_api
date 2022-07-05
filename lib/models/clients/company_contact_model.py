@@ -1,17 +1,17 @@
-from enum import IntEnum, auto
+from enum import IntEnum, auto, unique
 from typing import Final
 
 from sqlalchemy.orm import relationship
 from sqlalchemy.orm.relationships import RelationshipProperty
 from sqlalchemy.sql.schema import Column, ForeignKey
-from sqlalchemy.sql.sqltypes import Integer
+from sqlalchemy.sql.sqltypes import Enum, Integer
 
-from .._types import IntEnumType
 from ..base_interface import Base
 from ..user_interface import UserInterface
 from .company_model import CompanyModel
 
 
+@unique
 class ContactType(IntEnum):
     DIRECTOR: Final[int] = auto()
     ACCOUNTANT: Final[int] = auto()
@@ -19,12 +19,16 @@ class ContactType(IntEnum):
 
 
 class CompanyContactModel(UserInterface, Base):
-    company_id: Final[Column[int]] = Column(
-        'CompanyId',
-        CompanyModel.id.type,
-        ForeignKey(CompanyModel.id, onupdate='CASCADE', ondelete='CASCADE'),
+    company_registry_number: Final[Column[int]] = Column(
+        'CompanyRegistryNumber',
+        CompanyModel.registry_number.type,
+        ForeignKey(
+            CompanyModel.registry_number,
+            onupdate='CASCADE',
+            ondelete='CASCADE',
+        ),
         nullable=False,
-        key='company_id',
+        key='company_registry_number',
     )
     id: Final[Column[int]] = Column(
         'Id',
@@ -35,7 +39,7 @@ class CompanyContactModel(UserInterface, Base):
     )
     type: Final[Column[ContactType]] = Column(
         'Type',
-        IntEnumType(ContactType),
+        Enum(ContactType, create_constraint=True),
         nullable=False,
         default=ContactType.DIRECTOR,
         key='type',

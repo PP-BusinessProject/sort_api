@@ -1,7 +1,7 @@
 """The module that provides a `JuridicalPersonModel`."""
 
 
-from typing import Final, Optional
+from typing import TYPE_CHECKING, Final, Optional
 
 from sqlalchemy.orm import relationship
 from sqlalchemy.orm.relationships import RelationshipProperty
@@ -13,6 +13,9 @@ from ..base_interface import Base
 from ..misc.address_model import AddressModel
 from ..misc.bank_model import BankModel
 from .user_model import UserModel
+
+if TYPE_CHECKING:
+    from .company_contact_model import CompanyContactModel
 
 
 class CompanyModel(Base):
@@ -90,7 +93,9 @@ class CompanyModel(Base):
         cascade='save-update',
         uselist=False,
     )
-    real_address: Final['RelationshipProperty[AddressModel]'] = relationship(
+    real_address: Final[
+        'RelationshipProperty[Optional[AddressModel]]'
+    ] = relationship(
         'AddressModel',
         back_populates='companies',
         lazy='noload',
@@ -98,6 +103,15 @@ class CompanyModel(Base):
         cascade='save-update',
         uselist=False,
         overlaps='address',
+    )
+    contacts: Final[
+        'RelationshipProperty[list[CompanyContactModel]]'
+    ] = relationship(
+        'CompanyContactModel',
+        back_populates='company',
+        lazy='noload',
+        cascade='save-update, merge, expunge, delete, delete-orphan',
+        uselist=True,
     )
     user: Final['RelationshipProperty[UserModel]'] = relationship(
         'UserModel',

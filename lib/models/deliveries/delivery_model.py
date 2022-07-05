@@ -5,10 +5,9 @@ from typing import TYPE_CHECKING, Final, Optional
 from sqlalchemy.orm import relationship
 from sqlalchemy.orm.relationships import RelationshipProperty
 from sqlalchemy.sql.schema import Column, ForeignKey
-from sqlalchemy.sql.sqltypes import Boolean, Integer, Numeric
+from sqlalchemy.sql.sqltypes import Boolean, Integer, Numeric, DateTime
 
 from .._mixins import Timestamped
-from .._types import DateTimeISO8601
 from ..base_interface import Base
 from ..clients.user_model import UserModel
 from ..misc.address_model import AddressModel
@@ -59,7 +58,7 @@ class DeliveryModel(Timestamped, Base):
     )
     timestamp: Final[Column[Optional[datetime]]] = Column(
         'Timestamp',
-        DateTimeISO8601,
+        DateTime(timezone=True),
         key='timestamp',
     )
     success: Final[Column[Optional[bool]]] = Column(
