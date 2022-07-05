@@ -79,11 +79,12 @@ app = FastAPI(
     ),
     routes=[
         Route('/', schema),
+        Route('/{route}', endpoint, methods=['GET', 'POST', 'PUT', 'DELETE']),
         Route(
-            *('/{route}', endpoint),
+            '/{route}/{option}',
+            endpoint,
             methods=['GET', 'POST', 'PUT', 'DELETE'],
         ),
-        Route('/{route}/{option}', endpoint),
     ],
 )
 

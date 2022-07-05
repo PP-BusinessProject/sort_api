@@ -21,7 +21,6 @@ from starlette.status import (
     HTTP_400_BAD_REQUEST,
     HTTP_406_NOT_ACCEPTABLE,
     HTTP_500_INTERNAL_SERVER_ERROR,
-    HTTP_501_NOT_IMPLEMENTED,
 )
 
 from ..models.base_interface import Base, BaseInterface, serialize
@@ -133,9 +132,12 @@ async def endpoint(request: Request, /) -> Response:
                 columns[column].append((value, op))
         return columns
 
+    option: str = request.path_params.get('option', '').lower()
     if request.method == 'DELETE':
         async with Session.begin():
             statement = delete(table)
+            if option == 'return':
+                statement = statement.returning(*table.columns)
             if any((columns := get_columns()).values()):
                 statement = statement.where(
                     or_(
@@ -146,7 +148,18 @@ async def endpoint(request: Request, /) -> Response:
                         )
                     )
                 )
-            await Session.execute(statement)
+            result = await Session.execute(statement)
+
+        if option == 'return':
+            column_keys: list[str] = [column.key for column in table.columns]
+            return response(
+                [
+                    model(**dict(zip(column_keys, result)))
+                    if model is not None
+                    else result
+                    for result in result.fetchall()
+                ]
+            )
         return Response(None, HTTP_204_NO_CONTENT)
 
     elif request.method in {'POST', 'PUT'}:
@@ -201,10 +214,6 @@ async def endpoint(request: Request, /) -> Response:
                         if not value:
                             del item[field]
                             continue
-                        # raise HTTPException(
-                        #     HTTP_501_NOT_IMPLEMENTED,
-                        #     'Relationships modification is not supported.',
-                        # )
                         try:
                             item[field] = modify_item(
                                 relationship.entity.class_,
@@ -231,21 +240,25 @@ async def endpoint(request: Request, /) -> Response:
                     items.append(modify_item(model, item, field_chain))
                 return items
 
+        values = []
+        if isinstance(body, dict):
+            values.append(modify_item(model or table, body))
+        elif isinstance(body, Iterable):
+            for item in body:
+                values.append(modify_item(model or table, item))
+
         async with Session.begin():
             if request.method == 'POST':
-                if isinstance(body, dict):
-                    Session.add(modify_item(model or table, body))
-                elif isinstance(body, Iterable):
-                    for item in body:
-                        Session.add(modify_item(model or table, item))
+                for value in values:
+                    Session.add(value)
             else:
-                if isinstance(body, dict):
-                    await Session.merge(modify_item(model or table, body))
-                elif isinstance(body, Iterable):
-                    for item in body:
-                        await Session.merge(modify_item(model or table, item))
+                for index, value in enumerate(values):
+                    values[index] = await Session.merge(value)
 
-        return Response(None, HTTP_204_NO_CONTENT)
+        if option == 'return':
+            return response(values)
+        else:
+            return Response(None, HTTP_204_NO_CONTENT)
 
     else:
 
@@ -352,7 +365,6 @@ async def endpoint(request: Request, /) -> Response:
                     HTTP_400_BAD_REQUEST, 'Offset is invalid.'
                 ) from _
 
-        option: str = request.path_params.get('option', '').lower()
         if option == 'count':
             statement = select(count()).select_from(statement)
             return Response(str(await Session.scalar(statement)))

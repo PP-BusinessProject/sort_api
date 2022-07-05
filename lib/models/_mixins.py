@@ -7,6 +7,7 @@ from sqlalchemy.sql.sqltypes import DateTime
 from sqlalchemy.sql.schema import Column
 from typing_extensions import Self
 from sqlalchemy.sql.functions import now
+from dateutil.tz.tz import tzlocal
 
 
 class Timestamped(object):
@@ -19,7 +20,8 @@ class Timestamped(object):
             'CreatedAt',
             DateTime(timezone=True),
             nullable=False,
-            default=now(),
+            default=lambda: datetime.now(tzlocal()),
+            server_default=now(),
             key='created_at',
         )
 
@@ -30,7 +32,8 @@ class Timestamped(object):
             'UpdatedAt',
             DateTime(timezone=True),
             nullable=False,
-            default=now(),
+            default=lambda: datetime.now(tzlocal()),
+            server_default=now(),
             onupdate=now(),
             key='updated_at',
         )

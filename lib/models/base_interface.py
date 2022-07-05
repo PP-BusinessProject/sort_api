@@ -5,19 +5,8 @@ from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 from enum import Enum
 from re import findall
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    ClassVar,
-    Dict,
-    Final,
-    Iterable,
-    List,
-    Type,
-    TypeVar,
-    Union,
-    overload,
-)
+from typing import (TYPE_CHECKING, Any, ClassVar, Dict, Final, Iterable, List,
+                    Type, TypeVar, Union, overload)
 
 from inflect import engine
 from orjson import dumps
@@ -105,7 +94,19 @@ def serialize(value: Any, /, *, encoding: str = 'utf8') -> Serializable:
 
 def serialize(value: Any, /, *, encoding: str = 'utf8') -> Serializable:
     if isinstance(value, BaseInterface):
-        return serialize(value.dict)
+        remove_keys: dict[str, str] = {
+            relationship.key: relationship.back_populates
+            for relationship in value.relationships
+            if getattr(value, relationship.key, None)
+        }
+        return serialize(
+            {
+                k: {_: v for _, v in v.dict.items() if _ != remove_keys[k]}
+                if k in remove_keys
+                else v
+                for k, v in value.dict.items()
+            }
+        )
     elif isinstance(value, (type(None), bool, int, float, Decimal, str)):
         return value
     elif isinstance(value, bytes):
@@ -132,7 +133,6 @@ class BaseInterface(object):
     """The base class for all :module:`SQLAlchemy` models."""
 
     inflect: ClassVar[engine] = engine()
-    __mapper_args__: Final[dict[str, Any]] = dict(eager_defaults=True)
 
     @declared_attr
     def __tablename__(cls: Type[Self], /) -> str:  # noqa: N805

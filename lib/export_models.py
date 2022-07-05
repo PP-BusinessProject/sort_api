@@ -91,9 +91,8 @@ async def main(
                 else type.__name__.lower(),
                 default=default,
                 doc=column.doc,
-                required=column.default is None
-                and (not column.nullable or not column.autoincrement),
-                nullable=(column.default is not None and default is None)
+                nullable=column.autoincrement is True
+                or (column.default is not None and default is None)
                 or column.nullable,
                 compare=type in (int, float, str)
                 and column in mapper.primary_key,
@@ -110,7 +109,6 @@ async def main(
                 type=f'{_key}[]' if relationship.uselist else _key,
                 default=[] if relationship.uselist else None,
                 doc=relationship.doc,
-                required=False,
                 nullable=not relationship.uselist,
             )
 
