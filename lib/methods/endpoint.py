@@ -323,11 +323,11 @@ async def endpoint(request: Request, /) -> Response:
             elif isinstance(field, Iterable):
                 relationships_chain = iter(field)
                 field = next(relationships_chain)
-                option = selectinload(field)
+                option_ = selectinload(field)
 
                 for relationship in relationships_chain:
-                    option = option.selectinload(relationship)
-                relationship_options.append(option)
+                    option_ = option_.selectinload(relationship)
+                relationship_options.append(option_)
             else:
                 raise HTTPException(
                     HTTP_500_INTERNAL_SERVER_ERROR,
