@@ -1,1 +1,1 @@
-web: gunicorn --ssl-version TLSv1 -w 4 -k uvicorn.workers.UvicornWorker lib.main:app
+web: gunicorn -w 4 -k uvicorn.workers.UvicornWorker lib.main:app
