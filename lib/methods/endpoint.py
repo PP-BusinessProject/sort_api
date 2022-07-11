@@ -39,7 +39,6 @@ SerializedValue = Union[str, int, float]
 ColumnFilter = tuple[SerializedValue, operator]
 
 
-# TODO Optimize count
 async def endpoint(request: Request, /) -> Response:
     if not isinstance(app := request.get('app'), FastAPI):
         raise HTTPException(
