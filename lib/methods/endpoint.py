@@ -1,20 +1,24 @@
 from ast import operator
+from asyncio import Lock, Queue, QueueEmpty, sleep
+from json import dumps
 from operator import eq, ge, gt, le, lt, ne
 from types import MappingProxyType
-from typing import Any, Final, Iterable, Optional, Type, Union
+from typing import Any, Dict, Final, Iterable, List, Optional, Type, Union
 
 from fastapi.applications import FastAPI
 from fastapi.exceptions import HTTPException
 from fastapi.responses import ORJSONResponse
-from orjson import dumps, loads
+from orjson import dumps as ordumps
+from orjson import loads as orloads
 from sqlalchemy.ext.asyncio.scoping import async_scoped_session
 from sqlalchemy.orm import selectinload
 from sqlalchemy.orm.relationships import RelationshipProperty
 from sqlalchemy.sql.expression import delete, insert, or_, select, update
 from sqlalchemy.sql.functions import count
 from sqlalchemy.sql.schema import Column, MetaData, Table
+from sse_starlette import EventSourceResponse
 from starlette.requests import Request
-from starlette.responses import Response, StreamingResponse
+from starlette.responses import Response
 from starlette.status import (
     HTTP_204_NO_CONTENT,
     HTTP_304_NOT_MODIFIED,
@@ -22,7 +26,9 @@ from starlette.status import (
     HTTP_406_NOT_ACCEPTABLE,
     HTTP_500_INTERNAL_SERVER_ERROR,
 )
+from starlette.websockets import WebSocket
 
+from ..middleware.async_sqlalchemy_middleware import ColumnFilter
 from ..models.base_interface import Base, BaseInterface, serialize
 
 #
@@ -35,11 +41,8 @@ SQLAlhemyMethodDict: Final[
     {'GET': select, 'POST': insert, 'PUT': update, 'DELETE': delete}
 )
 
-SerializedValue = Union[str, int, float]
-ColumnFilter = tuple[SerializedValue, operator]
 
-
-async def endpoint(request: Request, /) -> Response:
+async def endpoint(request: Union[Request, WebSocket], /) -> Response:
     if not isinstance(app := request.get('app'), FastAPI):
         raise HTTPException(
             HTTP_500_INTERNAL_SERVER_ERROR, 'App is not present.'
@@ -52,11 +55,20 @@ async def endpoint(request: Request, /) -> Response:
         raise HTTPException(
             HTTP_500_INTERNAL_SERVER_ERROR, 'MetaData is not present.'
         )
+    if not isinstance(queues := request.get('queues'), dict):
+        raise HTTPException(
+            HTTP_500_INTERNAL_SERVER_ERROR, 'Queues are not present.'
+        )
+    if not isinstance(queue_lock := request.get('queue_lock'), Lock):
+        raise HTTPException(
+            HTTP_500_INTERNAL_SERVER_ERROR, 'Queues are not present.'
+        )
     if not isinstance(route := request.path_params.get('route'), str):
         raise HTTPException(
             HTTP_500_INTERNAL_SERVER_ERROR, 'Route is not present.'
         )
 
+    queues: Dict[BaseInterface, Dict[str, Dict[int, Queue]]]
     route = route.lower()
     for table_name, table in metadata.tables.items():
         if route == table_name.lower():
@@ -93,8 +105,8 @@ async def endpoint(request: Request, /) -> Response:
             else None,
         )
 
-    def get_columns() -> dict[Column, list[ColumnFilter]]:
-        columns: dict[Column, list[ColumnFilter]] = {}
+    def get_columns() -> Dict[str, List[ColumnFilter]]:
+        columns: Dict[str, List[ColumnFilter]] = {}
         for column in table.columns:
             if getattr(getattr(column.type, 'impl', None), 'python_type', ''):
                 type = column.type.impl.python_type
@@ -103,10 +115,10 @@ async def endpoint(request: Request, /) -> Response:
             else:
                 raise HTTPException(
                     HTTP_500_INTERNAL_SERVER_ERROR,
-                    f'Could not infer python type for {column}.',
+                    f'Could not infer python type for {column.key}.',
                 )
 
-            columns[column] = []
+            columns[column.key] = []
             for value in query_parameters.get(column.key, ()):
                 op: operator = eq
                 for op_key, op in OperatorDict.items():
@@ -128,10 +140,15 @@ async def endpoint(request: Request, /) -> Response:
                             f'invalid: {value}',
                         ) from _
 
-                columns[column].append((value, op))
+                columns[column.key].append((value, op))
         return columns
 
     option: str = request.path_params.get('option', '').lower()
+    # if isinstance(request, WebSocket):
+    #     await request.accept()
+    #     while True:
+    #         await request.send_bytes()
+    # el
     if request.method == 'DELETE':
         async with Session.begin():
             statement = delete(table)
@@ -141,8 +158,8 @@ async def endpoint(request: Request, /) -> Response:
                 statement = statement.where(
                     or_(
                         *(
-                            op(column, value)
-                            for column, values in columns.items()
+                            op(getattr(table.c, key), value)
+                            for key, values in columns.items()
                             for value, op in values
                         )
                     )
@@ -162,7 +179,7 @@ async def endpoint(request: Request, /) -> Response:
         return Response(None, HTTP_204_NO_CONTENT)
 
     elif request.method in {'POST', 'PUT'}:
-        if not isinstance(body := loads(await request.body()), Iterable):
+        if not isinstance(body := orloads(await request.body()), Iterable):
             raise HTTPException(HTTP_400_BAD_REQUEST, 'Body is invalid.')
         elif not body:
             raise HTTPException(HTTP_304_NOT_MODIFIED, 'Body is empty.')
@@ -239,23 +256,32 @@ async def endpoint(request: Request, /) -> Response:
                     items.append(modify_item(model, item, field_chain))
                 return items
 
-        values = []
+        items = []
         if isinstance(body, dict):
-            values.append(modify_item(model or table, body))
+            items.append(modify_item(model or table, body))
         elif isinstance(body, Iterable):
             for item in body:
-                values.append(modify_item(model or table, item))
+                items.append(modify_item(model or table, item))
 
         async with Session.begin():
             if request.method == 'POST':
-                for value in values:
-                    Session.add(value)
+                for item in items:
+                    Session.add(item)
             else:
-                for index, value in enumerate(values):
-                    values[index] = await Session.merge(value)
+                items = [await Session.merge(item) for item in items]
 
+        test_columns = dumps(columns := get_columns(), sort_keys=True)
+        if table in queues and test_columns in queues[table]:
+            for item in items:
+                if all(
+                    op(getattr(item, key), value)
+                    for key, operators in columns.items()
+                    for value, op in operators
+                ):
+                    for queue in queues[table][test_columns].values():
+                        await queue.put(item)
         if option == 'return':
-            return response(values)
+            return response(items)
         else:
             return Response(None, HTTP_204_NO_CONTENT)
 
@@ -341,8 +367,8 @@ async def endpoint(request: Request, /) -> Response:
             statement = statement.where(
                 or_(
                     *(
-                        op(column, value)
-                        for column, values in columns.items()
+                        op(getattr(table.c, key), value)
+                        for key, values in columns.items()
                         for value, op in values
                     )
                 )
@@ -385,15 +411,38 @@ async def endpoint(request: Request, /) -> Response:
                 return response((await Session.scalars(statement)).all())
 
             async def serialize_result():
-                async for item in await function(statement):
-                    yield dumps(item, default=serialize)
+                while not await request.is_disconnected():
+                    while True:
+                        try:
+                            queue = queues[table][test_columns][queue_id]
+                            item = queue.get_nowait()
+                            yield ordumps(item, default=serialize)
+                        except QueueEmpty:
+                            break
+                    await sleep(1)
+                async with queue_lock:
+                    del queues[table][test_columns][queue_id]
+                if not queues[table][test_columns]:
+                    del queues[table][test_columns]
+                if not queues[table]:
+                    del queues[table]
+                # async for item in await function(statement):
+                #     yield ordumps(item, default=serialize)
 
-            function = (
-                Session.stream
-                if column_fields or model is None
-                else Session.stream_scalars
-            )
-            return StreamingResponse(serialize_result())
+            # function = (
+            #     Session.stream
+            #     if column_fields or model is None
+            #     else Session.stream_scalars
+            # )
 
+            test_columns = dumps(columns, sort_keys=True)
+            if table not in queues:
+                queues[table] = {}
+            if test_columns not in queues[table]:
+                queues[table][test_columns] = {}
+            async with queue_lock:
+                queue_id = max(queues[table][test_columns] or (0,)) + 1
+                queues[table][test_columns][queue_id] = Queue()
+            return EventSourceResponse(serialize_result())
         else:
             return Response(None, HTTP_406_NOT_ACCEPTABLE)

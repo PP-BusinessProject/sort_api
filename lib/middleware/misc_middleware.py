@@ -1,58 +1,68 @@
 from dataclasses import dataclass
-from logging import Logger
 from time import monotonic
 from types import MappingProxyType
-from typing import Any, Final, Mapping
+from typing import Any, Callable, Final, Mapping, Union
 
-from starlette.middleware.base import (
-    BaseHTTPMiddleware,
-    RequestResponseEndpoint,
-)
-from starlette.requests import Request
 from starlette.responses import Response
-from starlette.types import ASGIApp
+from starlette.types import ASGIApp, Receive, Scope, Send
 from typing_extensions import Self
 
 
-async def process_time_middleware(
-    request: Request,
-    call_next: RequestResponseEndpoint,
-    /,
-) -> Response:
-    start_time = monotonic()
-    response = await call_next(request)
-    response.headers['X-Process-Time'] = f'{monotonic() - start_time:.6}'
-    return response
+@dataclass(init=False, frozen=True)
+class ProcessTimeMiddleware(object):
+    app: Final[ASGIApp]
 
+    def __init__(self: Self, /, app: ASGIApp) -> None:
+        object.__setattr__(self, 'app', app)
 
-async def logger_middleware(
-    request: Request,
-    call_next: RequestResponseEndpoint,
-) -> Response:
-    request.scope['logger'] = Logger('%(method)s %(path)s' % request.scope)
-    return await call_next(request)
+    async def __call__(
+        self: Self,
+        /,
+        scope: Scope,
+        receive: Receive,
+        send: Send,
+    ) -> Response:
+        start_time = monotonic()
+        response = await self.app(scope, receive, send)
+        response.headers['X-Process-Time'] = f'{monotonic() - start_time:.6}'
+        return response
 
 
 @dataclass(init=False, frozen=True)
-class AddToScopeMiddleware(BaseHTTPMiddleware):
+class AddToScopeMiddleware(object):
 
-    scope: Final[MappingProxyType[str, Any]]
+    app: Final[ASGIApp]
+    scope: Final[
+        Union[
+            Mapping[str, Any],
+            Callable[[Mapping[str, Any]], Mapping[str, Any]],
+        ]
+    ]
 
     def __init__(
         self: Self,
         /,
         app: ASGIApp,
-        scope: Mapping[str, Any],
+        scope: Union[
+            Mapping[str, Any],
+            Callable[[Mapping[str, Any]], Mapping[str, Any]],
+        ],
     ) -> None:
         object.__setattr__(self, 'app', app)
-        object.__setattr__(self, 'dispatch_func', self.dispatch)
-        object.__setattr__(self, 'scope', MappingProxyType(scope))
+        object.__setattr__(
+            self,
+            'scope',
+            MappingProxyType(scope) if isinstance(scope, dict) else scope,
+        )
 
-    async def dispatch(
+    async def __call__(
         self: Self,
-        request: Request,
-        call_next: RequestResponseEndpoint,
         /,
+        scope: Scope,
+        receive: Receive,
+        send: Send,
     ) -> Response:
-        request.scope.update(self.scope)
-        return await call_next(request)
+        merge = (
+            self.scope if isinstance(self.scope, dict) else self.scope(scope)
+        )
+        return await self.app(scope | merge, receive, send)

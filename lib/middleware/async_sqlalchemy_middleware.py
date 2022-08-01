@@ -1,7 +1,9 @@
+from ast import operator
+from asyncio import Lock, Queue
 from dataclasses import dataclass
 from logging import Logger
 from types import TracebackType
-from typing import Final, Optional, Type, Union
+from typing import Dict, Final, Optional, Tuple, Type, Union
 
 from sqlalchemy.engine.base import Connection, Engine
 from sqlalchemy.ext.asyncio.engine import AsyncConnection, AsyncEngine
@@ -11,20 +13,19 @@ from sqlalchemy.orm.scoping import scoped_session
 from sqlalchemy.orm.session import Session as SyncSession
 from sqlalchemy.orm.session import sessionmaker
 from sqlalchemy.sql.schema import MetaData
-from starlette.middleware.base import (
-    BaseHTTPMiddleware,
-    RequestResponseEndpoint,
-)
-from starlette.requests import Request
 from starlette.responses import Response
-from starlette.types import ASGIApp
+from starlette.types import ASGIApp, Receive, Scope, Send
 from typing_extensions import Self
 
+from ..models.base_interface import BaseInterface
 from ..utils.anyfunction import anycorofunction
+
+SerializedValue = Union[str, int, float]
+ColumnFilter = Tuple[SerializedValue, operator]
 
 
 @dataclass(init=False, frozen=True)
-class AsyncSQLAlchemyMiddleware(BaseHTTPMiddleware):
+class AsyncSQLAlchemyMiddleware(object):
 
     logger: Final[Logger]
     app: Final[ASGIApp]
@@ -33,6 +34,8 @@ class AsyncSQLAlchemyMiddleware(BaseHTTPMiddleware):
         Union[None, sessionmaker, scoped_session, async_scoped_session]
     ]
     metadata: Final[MetaData]
+    queues: Final[Dict[BaseInterface, Dict[str, Dict[int, Queue]]]]
+    queue_lock: Final[Lock]
 
     def __init__(
         self: Self,
@@ -69,10 +72,11 @@ class AsyncSQLAlchemyMiddleware(BaseHTTPMiddleware):
 
         object.__setattr__(self, 'logger', Logger(self.__class__.__name__))
         object.__setattr__(self, 'app', app)
-        object.__setattr__(self, 'dispatch_func', self.dispatch)
         object.__setattr__(self, 'engine', bind)
         object.__setattr__(self, 'Session', Session)
         object.__setattr__(self, 'metadata', metadata)
+        object.__setattr__(self, 'queues', {})
+        object.__setattr__(self, 'queue_lock', Lock())
 
     async def start(self: Self, /) -> Self:
         if self.metadata.is_bound():
@@ -117,14 +121,17 @@ class AsyncSQLAlchemyMiddleware(BaseHTTPMiddleware):
     ) -> None:
         await self.stop(dispose=exc_val is not None)
 
-    async def dispatch(
+    async def __call__(
         self: Self,
-        request: Request,
-        call_next: RequestResponseEndpoint,
         /,
+        scope: Scope,
+        receive: Receive,
+        send: Send,
     ) -> Response:
         async with self:
-            request.scope['engine'] = self.engine
-            request.scope['Session'] = self.Session
-            request.scope['metadata'] = self.metadata
-            return await call_next(request)
+            scope['engine'] = self.engine
+            scope['Session'] = self.Session
+            scope['metadata'] = self.metadata
+            scope['queues'] = self.queues
+            scope['queue_lock'] = self.queue_lock
+            return await self.app(scope, receive, send)

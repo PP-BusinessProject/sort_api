@@ -5,8 +5,20 @@ from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 from enum import Enum
 from re import findall
-from typing import (TYPE_CHECKING, Any, ClassVar, Dict, Final, Iterable, List,
-                    Type, TypeVar, Union, overload)
+from traceback import print_exc
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    ClassVar,
+    Dict,
+    Final,
+    Iterable,
+    List,
+    Type,
+    TypeVar,
+    Union,
+    overload,
+)
 
 from inflect import engine
 from orjson import dumps
@@ -99,14 +111,18 @@ def serialize(value: Any, /, *, encoding: str = 'utf8') -> Serializable:
             for relationship in value.relationships
             if getattr(value, relationship.key, None)
         }
-        return serialize(
-            {
-                k: {_: v for _, v in v.dict.items() if _ != remove_keys[k]}
-                if k in remove_keys
-                else v
-                for k, v in value.dict.items()
-            }
-        )
+        try:
+            return serialize(
+                {
+                    k: {_: v for _, v in v.dict.items() if _ != remove_keys[k]}
+                    if k in remove_keys
+                    else v
+                    for k, v in value.dict.items()
+                }
+            )
+        except BaseException:
+            print_exc()
+            raise
     elif isinstance(value, (type(None), bool, int, float, Decimal, str)):
         return value
     elif isinstance(value, bytes):
@@ -226,8 +242,8 @@ class BaseInterface(object):
 
     @property
     def dict(self: Self, /) -> Dict[str, Any]:
-        return {_.key: getattr(self, _.key, None) for _ in self.columns} | {
-            _.key: getattr(self, _.key, None) for _ in self.relationships
+        return {_.key: self.__dict__.get(_.key) for _ in self.columns} | {
+            _.key: self.__dict__.get(_.key) for _ in self.relationships
         }
 
     @property
@@ -280,4 +296,8 @@ class DefaultORJSONResponse(JSONResponse):
     media_type: Final[str] = 'application/json'
 
     def render(self: Self, content: Any, /) -> bytes:
-        return dumps(content, default=serialize)
+        try:
+            return dumps(content, default=serialize)
+        except BaseException as _:
+            print_exc()
+            raise

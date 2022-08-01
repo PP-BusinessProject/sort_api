@@ -1,11 +1,12 @@
 from asyncio import current_task
-from logging import basicConfig
+from logging import Logger, basicConfig
 from os import environ
 from pathlib import Path
 from typing import Final
 
 from fastapi.applications import FastAPI
 from fastapi.middleware.httpsredirect import HTTPSRedirectMiddleware
+from fastapi.security.oauth2 import OAuth2PasswordBearer
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio.engine import create_async_engine
 from sqlalchemy.ext.asyncio.scoping import async_scoped_session
@@ -13,8 +14,8 @@ from sqlalchemy.ext.asyncio.session import AsyncSession
 from sqlalchemy.orm.session import sessionmaker
 from sqlalchemy.pool.impl import AsyncAdaptedQueuePool
 from starlette.middleware import Middleware
-from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.routing import Route
+from starlette_authlib.middleware import AuthlibMiddleware
 from uvicorn import run
 
 from .callbacks.create_visual_schema import create_visual_schema
@@ -22,11 +23,7 @@ from .methods._exception_handlers import sqlalchemy_error_handler
 from .methods.endpoint import endpoint
 from .methods.schema import schema
 from .middleware.async_sqlalchemy_middleware import AsyncSQLAlchemyMiddleware
-from .middleware.misc_middleware import (
-    AddToScopeMiddleware,
-    logger_middleware,
-    process_time_middleware,
-)
+from .middleware.misc_middleware import AddToScopeMiddleware
 from .models.base_interface import Base, DefaultORJSONResponse
 
 # print(*(_ for _ in Base.metadata.tables if not _.startswith('_')), sep='\n')
@@ -40,10 +37,19 @@ app = FastAPI(
         lambda: create_visual_schema(Base.metadata, path=schema_path),
     ),
     exception_handlers={SQLAlchemyError: sqlalchemy_error_handler},
+    dependencies=[OAuth2PasswordBearer(tokenUrl='token')],
     middleware=(
-        Middleware(AddToScopeMiddleware, scope=dict(schema_path=schema_path)),
-        Middleware(BaseHTTPMiddleware, dispatch=process_time_middleware),
-        Middleware(BaseHTTPMiddleware, dispatch=logger_middleware),
+        Middleware(
+            AuthlibMiddleware,
+            secret_key='d716b68b370baa9bbb73ad5e121a0c21b1a8aa3f9800db61',
+        ),
+        Middleware(
+            AddToScopeMiddleware,
+            scope=lambda scope: dict(
+                schema_path=schema_path,
+                logger=Logger('%(method)s %(path)s' % scope),
+            ),
+        ),
         *(
             (Middleware(HTTPSRedirectMiddleware),)
             if 'DATABASE_URL' in environ
@@ -79,7 +85,11 @@ app = FastAPI(
     ),
     routes=[
         Route('/', schema),
-        Route('/{route}', endpoint, methods=['GET', 'POST', 'PUT', 'DELETE']),
+        Route(
+            '/{route}',
+            endpoint,
+            methods=['GET', 'POST', 'PUT', 'DELETE'],
+        ),
         Route(
             '/{route}/{option}',
             endpoint,
