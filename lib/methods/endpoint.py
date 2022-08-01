@@ -1,6 +1,6 @@
 from ast import operator
 from asyncio import Lock, Queue, QueueEmpty, sleep
-from json import dumps
+from json import dumps, loads
 from operator import eq, ge, gt, le, lt, ne
 from types import MappingProxyType
 from typing import Any, Dict, Final, Iterable, List, Optional, Type, Union
@@ -34,6 +34,9 @@ from ..models.base_interface import Base, BaseInterface, serialize
 #
 OperatorDict: Final[MappingProxyType[str, operator]] = MappingProxyType(
     {'>=': ge, '<=': le, '>': gt, '<': lt, '!': ne, '=': eq}
+)
+InverseOperatorDict: Final[MappingProxyType[operator, str]] = MappingProxyType(
+    {ge: '>=', le: '<=', gt: '>', lt: '<', ne: '!', eq: '='}
 )
 SQLAlhemyMethodDict: Final[
     MappingProxyType[str, Type[Any]]
@@ -270,16 +273,16 @@ async def endpoint(request: Union[Request, WebSocket], /) -> Response:
             else:
                 items = [await Session.merge(item) for item in items]
 
-        test_columns = dumps(columns := get_columns(), sort_keys=True)
-        if table in queues and test_columns in queues[table]:
+        if table in queues:
             for item in items:
-                if all(
-                    op(getattr(item, key), value)
-                    for key, operators in columns.items()
-                    for value, op in operators
-                ):
-                    for queue in queues[table][test_columns].values():
-                        await queue.put(item)
+                for test_columns in queues[table]:
+                    if all(
+                        OperatorDict[op](item.__dict__.get(key), value)
+                        for key, operators in loads(test_columns).items()
+                        for value, op in operators
+                    ):
+                        for queue in queues[table][test_columns].values():
+                            await queue.put(item)
         if option == 'return':
             return response(items)
         else:
@@ -435,7 +438,16 @@ async def endpoint(request: Union[Request, WebSocket], /) -> Response:
             #     else Session.stream_scalars
             # )
 
-            test_columns = dumps(columns, sort_keys=True)
+            test_columns = dumps(
+                {
+                    column: [
+                        (value, InverseOperatorDict[op])
+                        for value, op in operators
+                    ]
+                    for column, operators in columns.items()
+                },
+                sort_keys=True,
+            )
             if table not in queues:
                 queues[table] = {}
             if test_columns not in queues[table]:

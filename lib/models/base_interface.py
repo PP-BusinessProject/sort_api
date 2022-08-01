@@ -5,30 +5,16 @@ from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 from enum import Enum
 from re import findall
-from traceback import print_exc
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    ClassVar,
-    Dict,
-    Final,
-    Iterable,
-    List,
-    Type,
-    TypeVar,
-    Union,
-    overload,
-)
+from typing import (TYPE_CHECKING, Any, Callable, ClassVar, Dict, Final,
+                    Iterable, List, Type, TypeVar, Union, overload)
 
 from inflect import engine
-from orjson import dumps
 from pydantic.main import BaseConfig, BaseModel, create_model
 from sqlalchemy.orm.decl_api import declarative_base, declared_attr
 from sqlalchemy.orm.properties import ColumnProperty
 from sqlalchemy.orm.relationships import RelationshipProperty
 from sqlalchemy.orm.state import InstanceState
 from sqlalchemy.sql.schema import Column
-from starlette.responses import JSONResponse
 from typing_extensions import Self
 
 #
@@ -111,18 +97,14 @@ def serialize(value: Any, /, *, encoding: str = 'utf8') -> Serializable:
             for relationship in value.relationships
             if getattr(value, relationship.key, None)
         }
-        try:
-            return serialize(
-                {
-                    k: {_: v for _, v in v.dict.items() if _ != remove_keys[k]}
-                    if k in remove_keys
-                    else v
-                    for k, v in value.dict.items()
-                }
-            )
-        except BaseException:
-            print_exc()
-            raise
+        return serialize(
+            {
+                k: {_: v for _, v in v.dict.items() if _ != remove_keys[k]}
+                if k in remove_keys
+                else v
+                for k, v in value.dict.items()
+            }
+        )
     elif isinstance(value, (type(None), bool, int, float, Decimal, str)):
         return value
     elif isinstance(value, bytes):
@@ -133,6 +115,8 @@ def serialize(value: Any, /, *, encoding: str = 'utf8') -> Serializable:
         return value.isoformat()
     elif isinstance(value, Enum):
         return value.value
+    elif isinstance(value, Callable):
+        return f'{value.__module__}.{value.__name__}'
     elif isinstance(value, dict):
         return {serialize(k): serialize(v) for k, v in value.items()}
     elif isinstance(value, Iterable):
@@ -292,12 +276,4 @@ if TYPE_CHECKING:
 Base = declarative_base(cls=BaseInterface)
 
 
-class DefaultORJSONResponse(JSONResponse):
-    media_type: Final[str] = 'application/json'
 
-    def render(self: Self, content: Any, /) -> bytes:
-        try:
-            return dumps(content, default=serialize)
-        except BaseException as _:
-            print_exc()
-            raise

@@ -2,11 +2,12 @@ from asyncio import current_task
 from logging import Logger, basicConfig
 from os import environ
 from pathlib import Path
-from typing import Final
+from typing import Any, Final
 
 from fastapi.applications import FastAPI
 from fastapi.middleware.httpsredirect import HTTPSRedirectMiddleware
 from fastapi.security.oauth2 import OAuth2PasswordBearer
+from orjson import dumps
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio.engine import create_async_engine
 from sqlalchemy.ext.asyncio.scoping import async_scoped_session
@@ -14,8 +15,10 @@ from sqlalchemy.ext.asyncio.session import AsyncSession
 from sqlalchemy.orm.session import sessionmaker
 from sqlalchemy.pool.impl import AsyncAdaptedQueuePool
 from starlette.middleware import Middleware
+from starlette.responses import JSONResponse
 from starlette.routing import Route
 from starlette_authlib.middleware import AuthlibMiddleware
+from typing_extensions import Self
 from uvicorn import run
 
 from .callbacks.create_visual_schema import create_visual_schema
@@ -24,7 +27,15 @@ from .methods.endpoint import endpoint
 from .methods.schema import schema
 from .middleware.async_sqlalchemy_middleware import AsyncSQLAlchemyMiddleware
 from .middleware.misc_middleware import AddToScopeMiddleware
-from .models.base_interface import Base, DefaultORJSONResponse
+from .models.base_interface import Base, serialize
+
+
+class _DefaultORJSONResponse(JSONResponse):
+    media_type: Final[str] = 'application/json'
+
+    def render(self: Self, content: Any, /) -> bytes:
+        return dumps(content, default=serialize)
+
 
 # print(*(_ for _ in Base.metadata.tables if not _.startswith('_')), sep='\n')
 basicConfig(level=environ.get('LOGGING', 'INFO'))
@@ -32,7 +43,7 @@ schema_path: Final[Path] = Path('./lib/schema.png').resolve()
 app = FastAPI(
     version='0.0.1',
     docs_url=None,
-    default_response_class=DefaultORJSONResponse,
+    default_response_class=_DefaultORJSONResponse,
     on_startup=(
         lambda: create_visual_schema(Base.metadata, path=schema_path),
     ),
