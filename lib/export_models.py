@@ -4,11 +4,12 @@ from decimal import Decimal
 from enum import Enum, Flag
 from logging import basicConfig
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Optional, Type
+from typing import TYPE_CHECKING, Any, Callable, Optional, Type
 
 from orjson import dumps
 from sqlalchemy.orm.mapper import Mapper
 from sqlalchemy.orm.relationships import RelationshipProperty
+from sqlalchemy.sql.schema import Column
 
 
 async def main(
@@ -62,6 +63,7 @@ async def main(
     tables: dict[str, dict[str, dict[str, Any]]] = {}
     for key, mapper in registry.items():
         tables[key] = {}
+        column: Column
         for column in mapper.columns:
             default = None
             if column.default is not None:
@@ -69,7 +71,7 @@ async def main(
                     default = str(arg).removeprefix(
                         f'{arg.__class__.__name__}.'
                     )
-                else:
+                elif not isinstance(column.default.arg, Callable):
                     with suppress(TypeError):
                         default = serialize(column.default.arg)
                         if isinstance(default, Decimal):
@@ -91,9 +93,12 @@ async def main(
                 else type.__name__.lower(),
                 default=default,
                 doc=column.doc,
-                nullable=column.autoincrement is True
-                or (column.default is not None and default is None)
-                or column.nullable,
+                nullable=bool(
+                    column.autoincrement is True
+                    or column.foreign_keys
+                    or (column.default is not None and default is None)
+                    or column.nullable
+                ),
                 compare=type in (int, float, str)
                 and column in mapper.primary_key,
             )

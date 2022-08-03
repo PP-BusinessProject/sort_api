@@ -3,7 +3,17 @@ from asyncio import Lock, Queue, QueueEmpty, sleep
 from json import dumps, loads
 from operator import eq, ge, gt, le, lt, ne
 from types import MappingProxyType
-from typing import Any, Dict, Final, Iterable, List, Optional, Type, Union
+from typing import (
+    Any,
+    AsyncGenerator,
+    Dict,
+    Final,
+    Iterable,
+    List,
+    Optional,
+    Type,
+    Union,
+)
 
 from fastapi.applications import FastAPI
 from fastapi.exceptions import HTTPException
@@ -413,11 +423,11 @@ async def endpoint(request: Union[Request, WebSocket], /) -> Response:
                     return response(list(map(list, result.all())))
                 return response((await Session.scalars(statement)).all())
 
-            async def serialize_result():
+            async def serialize_result() -> AsyncGenerator[bytes, None]:
+                queue = queues[table][test_columns][queue_id]
                 while not await request.is_disconnected():
                     while True:
                         try:
-                            queue = queues[table][test_columns][queue_id]
                             item = queue.get_nowait()
                             yield ordumps(item, default=serialize)
                         except QueueEmpty:
@@ -455,6 +465,6 @@ async def endpoint(request: Union[Request, WebSocket], /) -> Response:
             async with queue_lock:
                 queue_id = max(queues[table][test_columns] or (0,)) + 1
                 queues[table][test_columns][queue_id] = Queue()
-            return EventSourceResponse(serialize_result())
+            return EventSourceResponse(serialize_result(), ping=float('inf'))
         else:
             return Response(None, HTTP_406_NOT_ACCEPTABLE)
