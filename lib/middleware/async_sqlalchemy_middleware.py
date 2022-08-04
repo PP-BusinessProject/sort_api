@@ -145,6 +145,4 @@ class AsyncSQLAlchemyMiddleware(object):
             scope['engine'] = self.engine
             scope['Session'] = self.Session
             scope['metadata'] = self.metadata
-            scope['queues'] = self.queues
-            scope['queue_lock'] = self.queue_lock
             return await self.app(scope, receive, send)
