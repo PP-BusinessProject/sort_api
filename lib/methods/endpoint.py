@@ -298,6 +298,7 @@ async def endpoint(request: Union[Request, WebSocket], /) -> Response:
                 items = [await Session.merge(item) for item in items]
 
         type = 'insert' if request.method == 'POST' else 'update'
+        print(queues)
         for test_columns in queues.get(table, {}):
             if _items := [
                 item
