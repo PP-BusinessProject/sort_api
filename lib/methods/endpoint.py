@@ -447,6 +447,7 @@ async def endpoint(request: Union[Request, WebSocket], /) -> Response:
                     while True:
                         try:
                             type, items = queue.get_nowait()
+                            print(items)
                             payload = dict(
                                 type=type,
                                 value=items,
@@ -454,8 +455,10 @@ async def endpoint(request: Union[Request, WebSocket], /) -> Response:
                             )
                             yield ordumps(payload, default=serialize)
                         except QueueEmpty:
+                            print('No value')
+                            await sleep(1)
                             break
-                    await sleep(1)
+
                 async with queue_lock:
                     del queues[table][test_columns][queue_id]
                 if not queues[table][test_columns]:
