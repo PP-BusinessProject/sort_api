@@ -1,3 +1,4 @@
+from datetime import date
 from typing import Iterable, Optional, Type
 
 from sqlalchemy.ext.hybrid import hybrid_property
@@ -5,7 +6,7 @@ from sqlalchemy.orm.decl_api import declared_attr
 from sqlalchemy.sql.elements import ClauseElement
 from sqlalchemy.sql.expression import func
 from sqlalchemy.sql.schema import CheckConstraint, Column
-from sqlalchemy.sql.sqltypes import BigInteger, String
+from sqlalchemy.sql.sqltypes import BigInteger, Date, String
 from typing_extensions import Self
 
 from ._types import CaseInsensitiveUnicode
@@ -52,6 +53,10 @@ class UserInterface(BaseInterface):
             unique=True,
             key='email',
         )
+
+    @declared_attr
+    def birthday(self: Self, /) -> Column[Optional[date]]:
+        return Column('Birthday', Date, key='birthday')
 
     @hybrid_property
     def full_name(self: Self, /) -> str:
