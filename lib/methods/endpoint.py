@@ -2,7 +2,6 @@ from ast import operator
 from asyncio import Lock, Queue, TimeoutError, sleep, wait_for
 from contextlib import suppress
 from datetime import date, datetime, time, timedelta
-from email import parser
 from json import dumps, loads
 from operator import eq, ge, gt, le, lt, ne
 from types import MappingProxyType
@@ -19,6 +18,7 @@ from typing import (
     Type,
     Union,
 )
+
 from dateutil.parser import isoparse
 from dateutil.tz.tz import tzlocal
 from fastapi.applications import FastAPI
@@ -257,11 +257,9 @@ async def endpoint(request: Request, /) -> Response:
                             elif type == date:
                                 item[field] = isoparse(value).date()
                             elif type == time:
-                                item[field] = datetime.fromisoformat(
-                                    value
-                                ).time()
+                                item[field] = isoparse(value).time()
                             elif type == datetime:
-                                item[field] = datetime.fromisoformat(value)
+                                item[field] = isoparse(value)
                             elif type == timedelta:
                                 if isinstance(value, (int, float)):
                                     item[field] = timedelta(seconds=value)
