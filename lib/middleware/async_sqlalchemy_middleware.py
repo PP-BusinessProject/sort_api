@@ -1,6 +1,5 @@
-import queue
 from ast import operator
-from asyncio import Lock, Queue
+from asyncio import Queue
 from dataclasses import dataclass
 from logging import Logger
 from types import TracebackType
@@ -52,8 +51,6 @@ class AsyncSQLAlchemyMiddleware(object):
         Union[None, sessionmaker, scoped_session, async_scoped_session]
     ]
     metadata: Final[MetaData]
-    queues: Final[StreamQueues]
-    queue_lock: Final[Lock]
 
     def __init__(
         self: Self,
@@ -93,8 +90,6 @@ class AsyncSQLAlchemyMiddleware(object):
         object.__setattr__(self, 'engine', bind)
         object.__setattr__(self, 'Session', Session)
         object.__setattr__(self, 'metadata', metadata)
-        object.__setattr__(self, 'queues', {})
-        object.__setattr__(self, 'queue_lock', Lock())
 
     async def start(self: Self, /) -> Self:
         if self.metadata.is_bound():

@@ -1,4 +1,4 @@
-from asyncio import current_task
+from asyncio import Lock, current_task
 from logging import Logger, basicConfig
 from os import environ
 from pathlib import Path
@@ -25,7 +25,10 @@ from .callbacks.create_visual_schema import create_visual_schema
 from .methods._exception_handlers import sqlalchemy_error_handler
 from .methods.endpoint import endpoint
 from .methods.schema import schema
-from .middleware.async_sqlalchemy_middleware import AsyncSQLAlchemyMiddleware
+from .middleware.async_sqlalchemy_middleware import (
+    AsyncSQLAlchemyMiddleware,
+    StreamQueues,
+)
 from .middleware.misc_middleware import AddToScopeMiddleware
 from .models.base_interface import Base, serialize
 
@@ -40,6 +43,32 @@ class _DefaultORJSONResponse(JSONResponse):
 # print(*(_ for _ in Base.metadata.tables if not _.startswith('_')), sep='\n')
 basicConfig(level=environ.get('LOGGING', 'INFO'))
 schema_path: Final[Path] = Path('./lib/schema.png').resolve()
+queues: Final[StreamQueues] = {}
+queue_lock: Final[Lock] = Lock()
+sqlalchemy: Final = async_scoped_session(
+    sessionmaker(
+        create_async_engine(
+            echo=environ.get('LOGGING', '').upper() == 'DEBUG',
+            url='postgresql+asyncpg://'
+            + environ.get(
+                'DATABASE_URL',
+                'postgres:postgres@localhost:5432/postgres',
+            ).split('://')[-1],
+            poolclass=AsyncAdaptedQueuePool,
+            pool_size=1,
+            max_overflow=-1,
+            pool_recycle=3600,
+            pool_pre_ping=True,
+            pool_use_lifo=True,
+            connect_args=dict(server_settings=dict(jit='off')),
+        ),
+        class_=AsyncSession,
+        expire_on_commit=False,
+        future=True,
+    ),
+    scopefunc=current_task,
+)
+
 app = FastAPI(
     version='0.0.1',
     docs_url=None,
@@ -59,6 +88,8 @@ app = FastAPI(
             scope=lambda scope: dict(
                 schema_path=schema_path,
                 logger=Logger('%(method)s %(path)s' % scope),
+                queues=queues,
+                queue_lock=queue_lock,
             ),
         ),
         *(
@@ -69,29 +100,7 @@ app = FastAPI(
         Middleware(
             AsyncSQLAlchemyMiddleware,
             metadata=Base.metadata,
-            bind=async_scoped_session(
-                sessionmaker(
-                    create_async_engine(
-                        echo=environ.get('LOGGING', '').upper() == 'DEBUG',
-                        url='postgresql+asyncpg://'
-                        + environ.get(
-                            'DATABASE_URL',
-                            'postgres:postgres@localhost:5432/postgres',
-                        ).split('://')[-1],
-                        poolclass=AsyncAdaptedQueuePool,
-                        pool_size=1,
-                        max_overflow=-1,
-                        pool_recycle=3600,
-                        pool_pre_ping=True,
-                        pool_use_lifo=True,
-                        connect_args=dict(server_settings=dict(jit='off')),
-                    ),
-                    class_=AsyncSession,
-                    expire_on_commit=False,
-                    future=True,
-                ),
-                scopefunc=current_task,
-            ),
+            bind=sqlalchemy,
         ),
     ),
     routes=[
