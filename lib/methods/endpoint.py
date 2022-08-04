@@ -223,6 +223,9 @@ async def endpoint(request: Request, /) -> Response:
             if isinstance(item, dict):
                 for field, value in dict(item).items():
                     if field in column_keys:
+                        if field in {'created_at', 'updated_at'}:
+                            del item[field]
+                            continue
                         column = column_keys[field]
                         if value is None and (
                             column.default is None
@@ -248,22 +251,22 @@ async def endpoint(request: Request, /) -> Response:
                                     ),
                                 ),
                             )
-                        else:
-                            type = None
-                            with suppress(NotImplementedError):
-                                type = column.type.python_type
-                            if type is None or isinstance(value, type):
-                                pass
-                            elif type == date:
-                                item[field] = isoparse(value).date()
-                            elif type == time:
-                                item[field] = isoparse(value).time()
-                            elif type == datetime:
-                                item[field] = isoparse(value)
-                            elif type == timedelta:
-                                if isinstance(value, (int, float)):
-                                    item[field] = timedelta(seconds=value)
-                            continue
+
+                        type = None
+                        with suppress(NotImplementedError):
+                            type = column.type.python_type
+                        if type is None or isinstance(value, type):
+                            pass
+                        elif type == date:
+                            item[field] = isoparse(value).date()
+                        elif type == time:
+                            item[field] = isoparse(value).time()
+                        elif type == datetime:
+                            item[field] = isoparse(value)
+                        elif type == timedelta:
+                            if isinstance(value, (int, float)):
+                                item[field] = timedelta(seconds=value)
+                        continue
 
                     elif relationship_keys is None:
                         raise HTTPException(
