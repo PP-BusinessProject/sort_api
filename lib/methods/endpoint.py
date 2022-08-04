@@ -1,5 +1,5 @@
 from ast import operator
-from asyncio import Lock, Queue, TimeoutError, wait_for
+from asyncio import Lock, Queue, TimeoutError, sleep, wait_for
 from datetime import datetime
 from json import dumps, loads
 from operator import eq, ge, gt, le, lt, ne
@@ -11,7 +11,9 @@ from typing import (
     Final,
     Iterable,
     List,
+    Literal,
     Optional,
+    Tuple,
     Type,
     Union,
 )
@@ -40,9 +42,13 @@ from starlette.status import (
 )
 from starlette.websockets import WebSocket
 
-from ..middleware.async_sqlalchemy_middleware import ColumnFilter, StreamQueues
+from ..middleware.async_sqlalchemy_middleware import ColumnFilter
 from ..models.base_interface import Base, BaseInterface, serialize
 
+#
+StreamEventType = Literal['ping', 'insert', 'update', 'delete']
+StreamQueue = Queue[Tuple[StreamEventType, Iterable[BaseInterface]]]
+StreamQueues = Dict[BaseInterface, Dict[str, Dict[int, StreamQueue]]]
 #
 OperatorDict: Final[MappingProxyType[str, operator]] = MappingProxyType(
     {'>=': ge, '<=': le, '>': gt, '<': lt, '!': ne, '=': eq}
@@ -76,14 +82,14 @@ async def endpoint(request: Union[Request, WebSocket], /) -> Response:
         )
     if not isinstance(queue_lock := request.get('queue_lock'), Lock):
         raise HTTPException(
-            HTTP_500_INTERNAL_SERVER_ERROR, 'Queues are not present.'
+            HTTP_500_INTERNAL_SERVER_ERROR, 'Queue Lock is not present.'
         )
     if not isinstance(route := request.path_params.get('route'), str):
         raise HTTPException(
             HTTP_500_INTERNAL_SERVER_ERROR, 'Route is not present.'
         )
 
-    queues: StreamQueues[BaseInterface]
+    queues: Final[StreamQueues]
     route = route.lower()
     for table_name, table in metadata.tables.items():
         if route == table_name.lower():
@@ -298,7 +304,6 @@ async def endpoint(request: Union[Request, WebSocket], /) -> Response:
                 items = [await Session.merge(item) for item in items]
 
         type = 'insert' if request.method == 'POST' else 'update'
-        print(queues)
         for test_columns in queues.get(table, {}):
             if _items := [
                 item
@@ -448,7 +453,6 @@ async def endpoint(request: Union[Request, WebSocket], /) -> Response:
                     while True:
                         try:
                             type, items = await wait_for(queue.get(), 1)
-                            print(items)
                             payload = dict(
                                 type=type,
                                 value=items,
@@ -456,7 +460,7 @@ async def endpoint(request: Union[Request, WebSocket], /) -> Response:
                             )
                             yield ordumps(payload, default=serialize)
                         except TimeoutError:
-                            print('No value')
+                            await sleep(1)
                             break
 
                 async with queue_lock:

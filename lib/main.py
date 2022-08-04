@@ -23,13 +23,10 @@ from uvicorn import run
 
 from .callbacks.create_visual_schema import create_visual_schema
 from .methods._exception_handlers import sqlalchemy_error_handler
-from .methods.endpoint import endpoint
+from .methods.endpoint import StreamQueues, endpoint
 from .methods.schema import schema
-from .middleware.async_sqlalchemy_middleware import (
-    AsyncSQLAlchemyMiddleware,
-    StreamQueues,
-)
-from .middleware.misc_middleware import AddToScopeMiddleware
+from .middleware.add_to_scope_middleware import AddToScopeMiddleware
+from .middleware.async_sqlalchemy_middleware import AsyncSQLAlchemyMiddleware
 from .models.base_interface import Base, serialize
 
 
@@ -68,7 +65,6 @@ sqlalchemy: Final = async_scoped_session(
     ),
     scopefunc=current_task,
 )
-
 app = FastAPI(
     version='0.0.1',
     docs_url=None,
@@ -119,4 +115,4 @@ app = FastAPI(
 )
 
 if 'DATABASE_URL' not in environ:
-    run(app, host='localhost', port=8000)
+    run(app, host='localhost', port=8000, http='h11', loop='asyncio')

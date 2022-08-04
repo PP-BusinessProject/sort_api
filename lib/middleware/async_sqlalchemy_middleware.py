@@ -1,19 +1,8 @@
 from ast import operator
-from asyncio import Queue
 from dataclasses import dataclass
 from logging import Logger
 from types import TracebackType
-from typing import (
-    Dict,
-    Final,
-    Iterable,
-    Literal,
-    Optional,
-    Tuple,
-    Type,
-    TypeVar,
-    Union,
-)
+from typing import Final, Optional, Tuple, Type, Union
 
 from sqlalchemy.engine.base import Connection, Engine
 from sqlalchemy.ext.asyncio.engine import AsyncConnection, AsyncEngine
@@ -27,18 +16,10 @@ from starlette.responses import Response
 from starlette.types import ASGIApp, Receive, Scope, Send
 from typing_extensions import Self
 
-from ..models.base_interface import BaseInterface
 from ..utils.anyfunction import anycorofunction
 
 SerializedValue = Union[str, int, float]
 ColumnFilter = Tuple[SerializedValue, operator]
-
-_BaseInterface = TypeVar('_BaseInterface', bound=BaseInterface, covariant=True)
-StreamEventType = Literal['ping', 'insert', 'update', 'delete']
-StreamQueue = Queue[Tuple[StreamEventType, Iterable[_BaseInterface]]]
-StreamQueues = Dict[
-    _BaseInterface, Dict[str, Dict[int, StreamQueue[_BaseInterface]]]
-]
 
 
 @dataclass(init=False, frozen=True)
