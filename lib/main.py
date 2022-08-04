@@ -1,9 +1,11 @@
 from asyncio import Lock, current_task
+from datetime import datetime
 from logging import Logger, basicConfig
 from os import environ
 from pathlib import Path
 from typing import Any, Final
 
+from dateutil.tz.tz import tzlocal
 from fastapi.applications import FastAPI
 from fastapi.middleware.httpsredirect import HTTPSRedirectMiddleware
 from fastapi.security.oauth2 import OAuth2PasswordBearer
@@ -15,7 +17,7 @@ from sqlalchemy.ext.asyncio.session import AsyncSession
 from sqlalchemy.orm.session import sessionmaker
 from sqlalchemy.pool.impl import AsyncAdaptedQueuePool
 from starlette.middleware import Middleware
-from starlette.responses import JSONResponse
+from starlette.responses import JSONResponse, Response
 from starlette.routing import Route
 from starlette_authlib.middleware import AuthlibMiddleware
 from typing_extensions import Self
@@ -101,6 +103,10 @@ app = FastAPI(
     ),
     routes=[
         Route('/', schema),
+        Route(
+            '/settings/time',
+            lambda request: Response(datetime.now(tzlocal()).isoformat()),
+        ),
         Route(
             '/{route}',
             endpoint,

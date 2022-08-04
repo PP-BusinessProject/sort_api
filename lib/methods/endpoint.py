@@ -40,7 +40,6 @@ from starlette.status import (
     HTTP_406_NOT_ACCEPTABLE,
     HTTP_500_INTERNAL_SERVER_ERROR,
 )
-from starlette.websockets import WebSocket
 
 from ..middleware.async_sqlalchemy_middleware import ColumnFilter
 from ..models.base_interface import Base, BaseInterface, serialize
@@ -63,7 +62,7 @@ SQLAlhemyMethodDict: Final[
 )
 
 
-async def endpoint(request: Union[Request, WebSocket], /) -> Response:
+async def endpoint(request: Request, /) -> Response:
     if not isinstance(app := request.get('app'), FastAPI):
         raise HTTPException(
             HTTP_500_INTERNAL_SERVER_ERROR, 'App is not present.'
@@ -165,11 +164,6 @@ async def endpoint(request: Union[Request, WebSocket], /) -> Response:
         return columns
 
     option: str = request.path_params.get('option', '').lower()
-    # if isinstance(request, WebSocket):
-    #     await request.accept()
-    #     while True:
-    #         await request.send_bytes()
-    # el
     if request.method == 'DELETE':
         async with Session.begin():
             statement = delete(table)
