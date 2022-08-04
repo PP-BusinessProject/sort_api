@@ -1,6 +1,8 @@
 from ast import operator
 from asyncio import Lock, Queue, TimeoutError, sleep, wait_for
-from datetime import datetime
+from contextlib import suppress
+from datetime import date, datetime, time, timedelta
+from email import parser
 from json import dumps, loads
 from operator import eq, ge, gt, le, lt, ne
 from types import MappingProxyType
@@ -17,7 +19,7 @@ from typing import (
     Type,
     Union,
 )
-
+from dateutil.parser import isoparse
 from dateutil.tz.tz import tzlocal
 from fastapi.applications import FastAPI
 from fastapi.exceptions import HTTPException
@@ -247,7 +249,24 @@ async def endpoint(request: Request, /) -> Response:
                                 ),
                             )
                         else:
+                            type = None
+                            with suppress(NotImplementedError):
+                                type = column.type.python_type
+                            if type is None or isinstance(value, type):
+                                pass
+                            elif type == date:
+                                item[field] = isoparse(value).date()
+                            elif type == time:
+                                item[field] = datetime.fromisoformat(
+                                    value
+                                ).time()
+                            elif type == datetime:
+                                item[field] = datetime.fromisoformat(value)
+                            elif type == timedelta:
+                                if isinstance(value, (int, float)):
+                                    item[field] = timedelta(seconds=value)
                             continue
+
                     elif relationship_keys is None:
                         raise HTTPException(
                             HTTP_500_INTERNAL_SERVER_ERROR,
