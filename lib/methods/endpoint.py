@@ -1,5 +1,5 @@
 from ast import operator
-from asyncio import Lock, Queue, QueueEmpty, sleep
+from asyncio import Lock, Queue, QueueEmpty, sleep, wait_for
 from datetime import datetime
 from json import dumps, loads
 from operator import eq, ge, gt, le, lt, ne
@@ -199,7 +199,7 @@ async def endpoint(request: Union[Request, WebSocket], /) -> Response:
                 )
             ]:
                 for queue in queues[table][test_columns].values():
-                    queue.put_nowait(('delete', _items))
+                    await queue.put(('delete', _items))
 
         if option == 'return':
             return response(items)
@@ -309,7 +309,7 @@ async def endpoint(request: Union[Request, WebSocket], /) -> Response:
                 )
             ]:
                 for queue in queues[table][test_columns].values():
-                    queue.put_nowait((type, _items))
+                    await queue.put((type, _items))
 
         if option == 'return':
             return response(items)
@@ -446,7 +446,7 @@ async def endpoint(request: Union[Request, WebSocket], /) -> Response:
                 while not await request.is_disconnected():
                     while True:
                         try:
-                            type, items = queue.get_nowait()
+                            type, items = await wait_for(queue.get(), 1)
                             print(items)
                             payload = dict(
                                 type=type,
@@ -454,9 +454,8 @@ async def endpoint(request: Union[Request, WebSocket], /) -> Response:
                                 timestamp=datetime.now(tzlocal()),
                             )
                             yield ordumps(payload, default=serialize)
-                        except QueueEmpty:
+                        except TimeoutError:
                             print('No value')
-                            await sleep(1)
                             break
 
                 async with queue_lock:
