@@ -1,5 +1,6 @@
 from ast import operator
 from asyncio import Lock, Queue, QueueEmpty, sleep
+from datetime import datetime
 from json import dumps, loads
 from operator import eq, ge, gt, le, lt, ne
 from types import MappingProxyType
@@ -15,6 +16,7 @@ from typing import (
     Union,
 )
 
+from dateutil.tz.tz import tzlocal
 from fastapi.applications import FastAPI
 from fastapi.exceptions import HTTPException
 from fastapi.responses import ORJSONResponse
@@ -38,7 +40,7 @@ from starlette.status import (
 )
 from starlette.websockets import WebSocket
 
-from ..middleware.async_sqlalchemy_middleware import ColumnFilter
+from ..middleware.async_sqlalchemy_middleware import ColumnFilter, StreamQueues
 from ..models.base_interface import Base, BaseInterface, serialize
 
 #
@@ -81,7 +83,7 @@ async def endpoint(request: Union[Request, WebSocket], /) -> Response:
             HTTP_500_INTERNAL_SERVER_ERROR, 'Route is not present.'
         )
 
-    queues: Dict[BaseInterface, Dict[str, Dict[int, Queue]]]
+    queues: StreamQueues[BaseInterface]
     route = route.lower()
     for table_name, table in metadata.tables.items():
         if route == table_name.lower():
@@ -179,16 +181,28 @@ async def endpoint(request: Union[Request, WebSocket], /) -> Response:
                 )
             result = await Session.execute(statement)
 
+        column_keys: list[str] = [column.key for column in table.columns]
+        items = [
+            model(**dict(zip(column_keys, item)))
+            if model is not None
+            else item
+            for item in result.fetchall()
+        ]
+        for test_columns in queues.get(table, {}):
+            if _items := [
+                item
+                for item in items
+                if all(
+                    OperatorDict[op](item.__dict__.get(key), value)
+                    for key, operators in loads(test_columns).items()
+                    for value, op in operators
+                )
+            ]:
+                for queue in queues[table][test_columns].values():
+                    await queue.put(('delete', _items))
+
         if option == 'return':
-            column_keys: list[str] = [column.key for column in table.columns]
-            return response(
-                [
-                    model(**dict(zip(column_keys, result)))
-                    if model is not None
-                    else result
-                    for result in result.fetchall()
-                ]
-            )
+            return response(items)
         return Response(None, HTTP_204_NO_CONTENT)
 
     elif request.method in {'POST', 'PUT'}:
@@ -283,16 +297,20 @@ async def endpoint(request: Union[Request, WebSocket], /) -> Response:
             else:
                 items = [await Session.merge(item) for item in items]
 
-        if table in queues:
-            for item in items:
-                for test_columns in queues[table]:
-                    if all(
-                        OperatorDict[op](item.__dict__.get(key), value)
-                        for key, operators in loads(test_columns).items()
-                        for value, op in operators
-                    ):
-                        for queue in queues[table][test_columns].values():
-                            await queue.put(item)
+        type = 'insert' if request.method == 'POST' else 'update'
+        for test_columns in queues.get(table, {}):
+            if _items := [
+                item
+                for item in items
+                if all(
+                    OperatorDict[op](item.__dict__.get(key), value)
+                    for key, operators in loads(test_columns).items()
+                    for value, op in operators
+                )
+            ]:
+                for queue in queues[table][test_columns].values():
+                    await queue.put((type, _items))
+
         if option == 'return':
             return response(items)
         else:
@@ -428,8 +446,13 @@ async def endpoint(request: Union[Request, WebSocket], /) -> Response:
                 while not await request.is_disconnected():
                     while True:
                         try:
-                            item = queue.get_nowait()
-                            yield ordumps(item, default=serialize)
+                            type, items = queue.get_nowait()
+                            payload = dict(
+                                type=type,
+                                value=items,
+                                timestamp=datetime.now(tzlocal()),
+                            )
+                            yield ordumps(payload, default=serialize)
                         except QueueEmpty:
                             break
                     await sleep(1)
@@ -439,14 +462,6 @@ async def endpoint(request: Union[Request, WebSocket], /) -> Response:
                     del queues[table][test_columns]
                 if not queues[table]:
                     del queues[table]
-                # async for item in await function(statement):
-                #     yield ordumps(item, default=serialize)
-
-            # function = (
-            #     Session.stream
-            #     if column_fields or model is None
-            #     else Session.stream_scalars
-            # )
 
             test_columns = dumps(
                 {
@@ -465,6 +480,17 @@ async def endpoint(request: Union[Request, WebSocket], /) -> Response:
             async with queue_lock:
                 queue_id = max(queues[table][test_columns] or (0,)) + 1
                 queues[table][test_columns][queue_id] = Queue()
-            return EventSourceResponse(serialize_result(), ping=float('inf'))
+            return EventSourceResponse(
+                serialize_result(),
+                ping=5,
+                ping_message_factory=lambda: ordumps(
+                    dict(
+                        type='ping',
+                        value=[],
+                        timestamp=datetime.now(tzlocal()),
+                    ),
+                    default=serialize,
+                ),
+            )
         else:
             return Response(None, HTTP_406_NOT_ACCEPTABLE)
