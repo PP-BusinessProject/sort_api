@@ -1,5 +1,5 @@
 from ast import operator
-from asyncio import Lock, Queue, QueueEmpty, sleep, wait_for
+from asyncio import Lock, Queue, TimeoutError, wait_for
 from datetime import datetime
 from json import dumps, loads
 from operator import eq, ge, gt, le, lt, ne
