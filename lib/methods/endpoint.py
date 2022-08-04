@@ -199,7 +199,7 @@ async def endpoint(request: Union[Request, WebSocket], /) -> Response:
                 )
             ]:
                 for queue in queues[table][test_columns].values():
-                    await queue.put(('delete', _items))
+                    queue.put_nowait(('delete', _items))
 
         if option == 'return':
             return response(items)
@@ -309,7 +309,7 @@ async def endpoint(request: Union[Request, WebSocket], /) -> Response:
                 )
             ]:
                 for queue in queues[table][test_columns].values():
-                    await queue.put((type, _items))
+                    queue.put_nowait((type, _items))
 
         if option == 'return':
             return response(items)
