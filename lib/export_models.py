@@ -101,6 +101,7 @@ async def main(
                 ),
                 compare=type in (int, float, str)
                 and column in mapper.primary_key,
+                equality=column.key not in {'created_at', 'updated_at'},
             )
 
         relationship: RelationshipProperty
@@ -115,6 +116,7 @@ async def main(
                 default=[] if relationship.uselist else None,
                 doc=relationship.doc,
                 nullable=not relationship.uselist,
+                equality=False,
             )
 
     with open(export_path, 'wb') as export:

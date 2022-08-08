@@ -5,8 +5,20 @@ from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 from enum import Enum
 from re import findall
-from typing import (TYPE_CHECKING, Any, Callable, ClassVar, Dict, Final,
-                    Iterable, List, Type, TypeVar, Union, overload)
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    ClassVar,
+    Dict,
+    Final,
+    Iterable,
+    List,
+    Type,
+    TypeVar,
+    Union,
+    overload,
+)
 
 from inflect import engine
 from pydantic.main import BaseConfig, BaseModel, create_model
@@ -133,6 +145,7 @@ class BaseInterface(object):
     """The base class for all :module:`SQLAlchemy` models."""
 
     inflect: ClassVar[engine] = engine()
+    __mapper_args__: ClassVar[Dict[str, Any]] = dict(eager_defaults=True)
 
     @declared_attr
     def __tablename__(cls: Type[Self], /) -> str:  # noqa: N805
@@ -274,6 +287,3 @@ if TYPE_CHECKING:
     Base: Final[Type[_DeclarativeBase]]
 
 Base = declarative_base(cls=BaseInterface)
-
-
-

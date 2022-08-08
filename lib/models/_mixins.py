@@ -2,12 +2,11 @@
 
 from datetime import datetime
 
-from sqlalchemy.orm.decl_api import declared_attr
-from sqlalchemy.sql.sqltypes import DateTime
-from sqlalchemy.sql.schema import Column
-from typing_extensions import Self
-from sqlalchemy.sql.functions import now
 from dateutil.tz.tz import tzlocal
+from sqlalchemy.orm.decl_api import declared_attr
+from sqlalchemy.sql.schema import Column
+from sqlalchemy.sql.sqltypes import DateTime
+from typing_extensions import Self
 
 
 class Timestamped(object):
@@ -21,7 +20,6 @@ class Timestamped(object):
             DateTime(timezone=True),
             nullable=False,
             default=lambda: datetime.now(tzlocal()),
-            server_default=now(),
             key='created_at',
         )
 
@@ -33,7 +31,6 @@ class Timestamped(object):
             DateTime(timezone=True),
             nullable=False,
             default=lambda: datetime.now(tzlocal()),
-            server_default=now(),
-            onupdate=now(),
+            onupdate=lambda: datetime.now(tzlocal()),
             key='updated_at',
         )

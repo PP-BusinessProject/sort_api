@@ -1,9 +1,9 @@
 from ast import operator
-from asyncio import Lock, Queue, TimeoutError, sleep, wait_for
+from asyncio import sleep
 from contextlib import suppress
 from datetime import date, datetime, time, timedelta
-from json import dumps, loads
 from operator import eq, ge, gt, le, lt, ne
+from queue import Empty, Queue
 from types import MappingProxyType
 from typing import (
     Any,
@@ -12,9 +12,7 @@ from typing import (
     Final,
     Iterable,
     List,
-    Literal,
     Optional,
-    Tuple,
     Type,
     Union,
 )
@@ -24,11 +22,12 @@ from dateutil.tz.tz import tzlocal
 from fastapi.applications import FastAPI
 from fastapi.exceptions import HTTPException
 from fastapi.responses import ORJSONResponse
-from orjson import dumps as ordumps
-from orjson import loads as orloads
+from orjson import dumps, loads
+from sqlalchemy.event.api import listen, remove
 from sqlalchemy.ext.asyncio.scoping import async_scoped_session
-from sqlalchemy.orm import selectinload
+from sqlalchemy.orm import UOWTransaction, selectinload
 from sqlalchemy.orm.relationships import RelationshipProperty
+from sqlalchemy.orm.session import sessionmaker
 from sqlalchemy.sql.expression import delete, insert, or_, select, update
 from sqlalchemy.sql.functions import count
 from sqlalchemy.sql.schema import Column, MetaData, Table
@@ -46,10 +45,6 @@ from starlette.status import (
 from ..middleware.async_sqlalchemy_middleware import ColumnFilter
 from ..models.base_interface import Base, BaseInterface, serialize
 
-#
-StreamEventType = Literal['ping', 'insert', 'update', 'delete']
-StreamQueue = Queue[Tuple[StreamEventType, Iterable[BaseInterface]]]
-StreamQueues = Dict[BaseInterface, Dict[str, Dict[int, StreamQueue]]]
 #
 OperatorDict: Final[MappingProxyType[str, operator]] = MappingProxyType(
     {'>=': ge, '<=': le, '>': gt, '<': lt, '!': ne, '=': eq}
@@ -77,20 +72,11 @@ async def endpoint(request: Request, /) -> Response:
         raise HTTPException(
             HTTP_500_INTERNAL_SERVER_ERROR, 'MetaData is not present.'
         )
-    if not isinstance(queues := request.get('queues'), dict):
-        raise HTTPException(
-            HTTP_500_INTERNAL_SERVER_ERROR, 'Queues are not present.'
-        )
-    if not isinstance(queue_lock := request.get('queue_lock'), Lock):
-        raise HTTPException(
-            HTTP_500_INTERNAL_SERVER_ERROR, 'Queue Lock is not present.'
-        )
     if not isinstance(route := request.path_params.get('route'), str):
         raise HTTPException(
             HTTP_500_INTERNAL_SERVER_ERROR, 'Route is not present.'
         )
 
-    queues: Final[StreamQueues]
     route = route.lower()
     for table_name, table in metadata.tables.items():
         if route == table_name.lower():
@@ -183,32 +169,19 @@ async def endpoint(request: Request, /) -> Response:
                 )
             result = await Session.execute(statement)
 
-        column_keys: list[str] = [column.key for column in table.columns]
-        items = [
-            model(**dict(zip(column_keys, item)))
-            if model is not None
-            else item
-            for item in result.fetchall()
-        ]
-        for test_columns in queues.get(table, {}):
-            if _items := [
-                item
-                for item in items
-                if all(
-                    OperatorDict[op](item.__dict__.get(key), value)
-                    for key, operators in loads(test_columns).items()
-                    for value, op in operators
-                )
-            ]:
-                for queue in queues[table][test_columns].values():
-                    await queue.put(('delete', _items))
-
         if option == 'return':
+            column_keys: list[str] = [column.key for column in table.columns]
+            items = [
+                model(**dict(zip(column_keys, item)))
+                if model is not None
+                else item
+                for item in result.fetchall()
+            ]
             return response(items)
         return Response(None, HTTP_204_NO_CONTENT)
 
     elif request.method in {'POST', 'PUT'}:
-        if not isinstance(body := orloads(await request.body()), Iterable):
+        if not isinstance(body := loads(await request.body()), Iterable):
             raise HTTPException(HTTP_400_BAD_REQUEST, 'Body is invalid.')
         elif not body:
             raise HTTPException(HTTP_304_NOT_MODIFIED, 'Body is empty.')
@@ -312,24 +285,9 @@ async def endpoint(request: Request, /) -> Response:
 
         async with Session.begin():
             if request.method == 'POST':
-                for item in items:
-                    Session.add(item)
+                map(items, Session.add)
             else:
                 items = [await Session.merge(item) for item in items]
-
-        type = 'insert' if request.method == 'POST' else 'update'
-        for test_columns in queues.get(table, {}):
-            if _items := [
-                item
-                for item in items
-                if all(
-                    OperatorDict[op](item.__dict__.get(key), value)
-                    for key, operators in loads(test_columns).items()
-                    for value, op in operators
-                )
-            ]:
-                for queue in queues[table][test_columns].values():
-                    await queue.put((type, _items))
 
         if option == 'return':
             return response(items)
@@ -461,52 +419,65 @@ async def endpoint(request: Request, /) -> Response:
                     return response(list(map(list, result.all())))
                 return response((await Session.scalars(statement)).all())
 
+            if isinstance(session := Session.session_factory, sessionmaker):
+                session = session.class_
+            session = getattr(session, 'sync_session_class', session)
+
             async def serialize_result() -> AsyncGenerator[bytes, None]:
-                queue = queues[table][test_columns][queue_id]
-                while not await request.is_disconnected():
-                    while True:
-                        try:
-                            type, items = await wait_for(queue.get(), 1)
-                            payload = dict(
-                                type=type,
-                                value=items,
-                                timestamp=datetime.now(tzlocal()),
-                            )
-                            yield ordumps(payload, default=serialize)
-                        except TimeoutError:
-                            await sleep(1)
-                            break
+                nonlocal request, queue, _after_flush
+                try:
+                    while not await request.is_disconnected():
+                        while True:
+                            try:
+                                prev, items = queue.get(timeout=1)
+                                if not prev or not items:
+                                    continue
+                                payload = dict(
+                                    prev_value=prev,
+                                    value=items,
+                                    timestamp=datetime.now(tzlocal()),
+                                )
+                                yield dumps(payload, default=serialize)
+                            except Empty:
+                                await sleep(1)
+                                break
+                finally:
+                    remove(session, 'after_flush', _after_flush)
 
-                async with queue_lock:
-                    del queues[table][test_columns][queue_id]
-                if not queues[table][test_columns]:
-                    del queues[table][test_columns]
-                if not queues[table]:
-                    del queues[table]
-
-            test_columns = dumps(
-                {
-                    column: [
-                        (value, InverseOperatorDict[op])
-                        for value, op in operators
+            def _after_flush(_: Any, context: UOWTransaction, /) -> None:
+                nonlocal queue, columns
+                if states := [
+                    state
+                    for state in context.states
+                    if table in state.mapper.tables
+                    and all(
+                        operator(getattr(state.attrs, column).value, value)
+                        for column, operators in columns.items()
+                        for value, operator in operators
+                    )
+                ]:
+                    prev_items = [
+                        state.class_.from_previous_state(state)
+                        if state.persistent
+                        else state.object
+                        for state in states
+                        if context.is_deleted(state) or state.persistent
                     ]
-                    for column, operators in columns.items()
-                },
-                sort_keys=True,
-            )
-            if table not in queues:
-                queues[table] = {}
-            if test_columns not in queues[table]:
-                queues[table][test_columns] = {}
-            async with queue_lock:
-                queue_id = max(queues[table][test_columns] or (0,)) + 1
-                queues[table][test_columns][queue_id] = Queue()
+                    items = [
+                        state.object
+                        for state in states
+                        if not context.is_deleted(state)
+                    ]
+                    queue.put((prev_items, items))
+
+            queue = Queue()
+            listen(session, 'after_flush', _after_flush)
             return EventSourceResponse(
                 serialize_result(),
                 ping=5,
-                ping_message_factory=lambda: ordumps(
+                ping_message_factory=lambda: dumps(
                     dict(
-                        type='ping',
+                        prev_value=[],
                         value=[],
                         timestamp=datetime.now(tzlocal()),
                     ),
