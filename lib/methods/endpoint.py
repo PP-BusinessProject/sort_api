@@ -285,7 +285,7 @@ async def endpoint(request: Request, /) -> Response:
 
         async with Session.begin():
             if request.method == 'POST':
-                map(items, Session.add)
+                map(Session.add, items)
             else:
                 items = [await Session.merge(item) for item in items]
 
