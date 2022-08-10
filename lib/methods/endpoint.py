@@ -440,6 +440,12 @@ async def endpoint(request: Request, /) -> Response:
                 #     timestamp=datetime.now(tzlocal()),
                 # )
                 # yield dumps(payload, default=serialize)
+                payload = dict(
+                    prev_value=[],
+                    value=[],
+                    timestamp=datetime.now(tzlocal()),
+                )
+                yield dumps(payload, default=serialize)
                 try:
                     while not await request.is_disconnected():
                         while True:
