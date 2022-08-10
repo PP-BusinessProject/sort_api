@@ -356,9 +356,7 @@ async def endpoint(request: Request, /) -> Response:
                 relationship_options.append(selectinload(field))
             elif isinstance(field, Iterable):
                 relationships_chain = iter(field)
-                field = next(relationships_chain)
-                option_ = selectinload(field)
-
+                option_ = selectinload(next(relationships_chain))
                 for relationship in relationships_chain:
                     option_ = option_.selectinload(relationship)
                 relationship_options.append(option_)
@@ -444,7 +442,7 @@ async def endpoint(request: Request, /) -> Response:
                 finally:
                     remove(session, 'after_flush', _after_flush)
 
-            def _after_flush(_: Any, context: UOWTransaction, /) -> None:
+            def _after_flush(session: Any, context: UOWTransaction, /) -> None:
                 nonlocal queue, columns
                 if states := [
                     state
@@ -474,7 +472,7 @@ async def endpoint(request: Request, /) -> Response:
             listen(session, 'after_flush', _after_flush)
             return EventSourceResponse(
                 serialize_result(),
-                ping=5,
+                ping=float('inf'),
                 ping_message_factory=lambda: dumps(
                     dict(
                         prev_value=[],
