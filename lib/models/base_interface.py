@@ -117,8 +117,10 @@ def serialize(value: Any, /, *, encoding: str = 'utf8') -> Serializable:
                 for k, v in value.dict.items()
             }
         )
-    elif isinstance(value, (type(None), bool, int, float, Decimal, str)):
+    elif isinstance(value, (type(None), bool, int, float, str)):
         return value
+    elif isinstance(value, Decimal):
+        return float(value)
     elif isinstance(value, bytes):
         return value.decode(encoding)
     elif isinstance(value, timedelta):

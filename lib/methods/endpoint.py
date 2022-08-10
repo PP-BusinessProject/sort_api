@@ -183,7 +183,7 @@ async def endpoint(request: Request, /) -> Response:
     elif request.method in {'POST', 'PUT'}:
         if not isinstance(body := loads(await request.body()), Iterable):
             raise HTTPException(HTTP_400_BAD_REQUEST, 'Body is invalid.')
-        elif not body:
+        elif isinstance(body, list) and not body:
             raise HTTPException(HTTP_304_NOT_MODIFIED, 'Body is empty.')
 
         def modify_item(
