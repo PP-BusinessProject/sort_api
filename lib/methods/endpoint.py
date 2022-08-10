@@ -411,18 +411,35 @@ async def endpoint(request: Request, /) -> Response:
             ]:
                 statement = statement.order_by(*orderings)
 
-            if not option:
+            async def get_response() -> list:
+                nonlocal Session, statement
                 if column_fields or model is None:
                     result = await Session.execute(statement)
-                    return response(list(map(list, result.all())))
-                return response((await Session.scalars(statement)).all())
+                    return list(map(list, result.all()))
+                return (await Session.scalars(statement)).all()
+
+            if not option:
+                return response(await get_response())
 
             if isinstance(session := Session.session_factory, sessionmaker):
                 session = session.class_
             session = getattr(session, 'sync_session_class', session)
 
             async def serialize_result() -> AsyncGenerator[bytes, None]:
-                nonlocal request, queue, _after_flush
+                def get_item(item: BaseInterface, /) -> list:
+                    return [
+                        getattr(item, column.key)
+                        for column in table.columns
+                        if not column_keys or column.key in column_keys
+                    ]
+
+                nonlocal Session, request, queue, _after_flush
+                # payload = dict(
+                #     prev_value=[],
+                #     value=await get_response(),
+                #     timestamp=datetime.now(tzlocal()),
+                # )
+                # yield dumps(payload, default=serialize)
                 try:
                     while not await request.is_disconnected():
                         while True:
@@ -430,6 +447,9 @@ async def endpoint(request: Request, /) -> Response:
                                 prev, items = queue.get(timeout=1)
                                 if not prev or not items:
                                     continue
+                                if column_keys or model is None:
+                                    prev = list(map(get_item, prev))
+                                    items = list(map(get_item, items))
                                 payload = dict(
                                     prev_value=prev,
                                     value=items,
@@ -472,7 +492,7 @@ async def endpoint(request: Request, /) -> Response:
             listen(session, 'after_flush', _after_flush)
             return EventSourceResponse(
                 serialize_result(),
-                ping=25,
+                ping=15,
                 ping_message_factory=lambda: dumps(
                     dict(
                         prev_value=[],
