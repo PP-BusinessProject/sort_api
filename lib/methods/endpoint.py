@@ -5,17 +5,8 @@ from datetime import date, datetime, time, timedelta
 from operator import eq, ge, gt, le, lt, ne
 from queue import Empty, Queue
 from types import MappingProxyType
-from typing import (
-    Any,
-    AsyncGenerator,
-    Dict,
-    Final,
-    Iterable,
-    List,
-    Optional,
-    Type,
-    Union,
-)
+from typing import (Any, AsyncGenerator, Dict, Final, Iterable, List, Optional,
+                    Type, Union)
 
 from dateutil.parser import isoparse
 from dateutil.tz.tz import tzlocal
@@ -34,13 +25,9 @@ from sqlalchemy.sql.schema import Column, MetaData, Table
 from sse_starlette import EventSourceResponse
 from starlette.requests import Request
 from starlette.responses import Response
-from starlette.status import (
-    HTTP_204_NO_CONTENT,
-    HTTP_304_NOT_MODIFIED,
-    HTTP_400_BAD_REQUEST,
-    HTTP_406_NOT_ACCEPTABLE,
-    HTTP_500_INTERNAL_SERVER_ERROR,
-)
+from starlette.status import (HTTP_204_NO_CONTENT, HTTP_304_NOT_MODIFIED,
+                              HTTP_400_BAD_REQUEST, HTTP_406_NOT_ACCEPTABLE,
+                              HTTP_500_INTERNAL_SERVER_ERROR)
 
 from ..middleware.async_sqlalchemy_middleware import ColumnFilter
 from ..models.base_interface import Base, BaseInterface, serialize
@@ -440,12 +427,6 @@ async def endpoint(request: Request, /) -> Response:
                 #     timestamp=datetime.now(tzlocal()),
                 # )
                 # yield dumps(payload, default=serialize)
-                payload = dict(
-                    prev_value=[],
-                    value=[],
-                    timestamp=datetime.now(tzlocal()),
-                )
-                yield dumps(payload, default=serialize)
                 try:
                     while not await request.is_disconnected():
                         while True:
@@ -498,7 +479,7 @@ async def endpoint(request: Request, /) -> Response:
             listen(session, 'after_flush', _after_flush)
             return EventSourceResponse(
                 serialize_result(),
-                ping=15,
+                ping=20,
                 ping_message_factory=lambda: dumps(
                     dict(
                         prev_value=[],
