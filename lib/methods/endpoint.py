@@ -5,17 +5,8 @@ from datetime import date, datetime, time, timedelta
 from operator import eq, ge, gt, le, lt, ne
 from queue import Empty, Queue
 from types import MappingProxyType
-from typing import (
-    Any,
-    AsyncGenerator,
-    Dict,
-    Final,
-    Iterable,
-    List,
-    Optional,
-    Type,
-    Union,
-)
+from typing import (Any, AsyncGenerator, Dict, Final, Iterable, List, Optional,
+                    Type, Union)
 
 from dateutil.parser import isoparse
 from dateutil.tz.tz import tzlocal
@@ -34,13 +25,9 @@ from sqlalchemy.sql.schema import Column, MetaData, Table
 from sse_starlette import EventSourceResponse
 from starlette.requests import Request
 from starlette.responses import Response
-from starlette.status import (
-    HTTP_204_NO_CONTENT,
-    HTTP_304_NOT_MODIFIED,
-    HTTP_400_BAD_REQUEST,
-    HTTP_406_NOT_ACCEPTABLE,
-    HTTP_500_INTERNAL_SERVER_ERROR,
-)
+from starlette.status import (HTTP_204_NO_CONTENT, HTTP_304_NOT_MODIFIED,
+                              HTTP_400_BAD_REQUEST, HTTP_406_NOT_ACCEPTABLE,
+                              HTTP_500_INTERNAL_SERVER_ERROR)
 
 from ..middleware.async_sqlalchemy_middleware import ColumnFilter
 from ..models.base_interface import Base, BaseInterface, serialize
@@ -201,8 +188,10 @@ async def endpoint(request: Request, /) -> Response:
                             del item[field]
                             continue
                         column = column_keys[field]
-                        if (value is None and column.default is None) and (
-                            not column.nullable
+                        if (
+                            (not field_chain and value is None)
+                            and column.default is None
+                            and not column.nullable
                             and column.autoincrement is not True
                         ):
                             raise HTTPException(
