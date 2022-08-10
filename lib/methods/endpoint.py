@@ -472,7 +472,7 @@ async def endpoint(request: Request, /) -> Response:
             listen(session, 'after_flush', _after_flush)
             return EventSourceResponse(
                 serialize_result(),
-                ping=float('inf'),
+                ping=25,
                 ping_message_factory=lambda: dumps(
                     dict(
                         prev_value=[],
