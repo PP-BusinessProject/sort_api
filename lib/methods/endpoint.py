@@ -194,33 +194,30 @@ async def endpoint(request: Request, /) -> Response:
         ) -> dict[str, Any]:
             column_keys, relationship_keys = get_keys(model)
             if isinstance(item, dict):
+                item = dict.fromkeys(column_keys) | item
                 for field, value in dict(item).items():
                     if field in column_keys:
                         if field in {'created_at', 'updated_at'}:
                             del item[field]
                             continue
                         column = column_keys[field]
-                        if value is None and (
-                            column.default is None
-                            and (
-                                not column.nullable or not column.autoincrement
-                            )
+                        if (value is None and column.default is None) and (
+                            not column.nullable
+                            and column.autoincrement is not True
                         ):
                             raise HTTPException(
                                 HTTP_400_BAD_REQUEST,
-                                'Table "{name}" requires fields: '
+                                'Table `{name}` requires fields: '
                                 '{fields}.'.format(
                                     name=model.name
                                     if isinstance(model, Table)
                                     else model.__tablename__,
                                     fields=', '.join(
-                                        f'"{column.key}"'
+                                        f'`{column.key}`'
                                         for column in column_keys.values()
                                         if column.default is None
-                                        and (
-                                            not column.nullable
-                                            or not column.autoincrement
-                                        )
+                                        and not column.nullable
+                                        and column.autoincrement is not True
                                     ),
                                 ),
                             )
@@ -285,7 +282,8 @@ async def endpoint(request: Request, /) -> Response:
 
         async with Session.begin():
             if request.method == 'POST':
-                map(Session.add, items)
+                for item in items:
+                    Session.add(item)
             else:
                 items = [await Session.merge(item) for item in items]
 
