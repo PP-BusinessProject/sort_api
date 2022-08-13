@@ -13,6 +13,7 @@ from ..base_interface import Base
 from ..user_interface import UserInterface
 
 if TYPE_CHECKING:
+    from ..bonuses.bonus_model import BonusModel
     from ..containers.container_model import ContainerModel
     from ..containers.container_tank_clearing_model import (
         ContainerTankClearingModel,
@@ -117,6 +118,13 @@ class UserModel(UserInterface, Timestamped, Base):
         lazy='noload',
         cascade='save-update, merge, expunge, delete, delete-orphan',
         uselist=False,
+    )
+    bonuses: Final['RelationshipProperty[list[BonusModel]]'] = relationship(
+        'BonusModel',
+        back_populates='owner',
+        lazy='noload',
+        cascade='save-update, merge, expunge, delete, delete-orphan',
+        uselist=True,
     )
     containers: Final[
         'RelationshipProperty[list[ContainerModel]]'

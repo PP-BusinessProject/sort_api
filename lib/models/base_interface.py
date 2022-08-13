@@ -22,6 +22,7 @@ from typing import (
 
 from inflect import engine
 from pydantic.main import BaseConfig, BaseModel, create_model
+from sqlalchemy.inspection import inspect
 from sqlalchemy.orm.decl_api import declarative_base, declared_attr
 from sqlalchemy.orm.properties import ColumnProperty
 from sqlalchemy.orm.relationships import RelationshipProperty
@@ -104,19 +105,14 @@ def serialize(value: Any, /, *, encoding: str = 'utf8') -> Serializable:
 
 def serialize(value: Any, /, *, encoding: str = 'utf8') -> Serializable:
     if isinstance(value, BaseInterface):
-        remove_keys: dict[str, str] = {
-            relationship.key: relationship.back_populates
-            for relationship in value.relationships
-            if getattr(value, relationship.key, None)
-        }
-        return serialize(
-            {
-                k: {_: v for _, v in v.dict.items() if _ != remove_keys[k]}
-                if k in remove_keys
-                else v
-                for k, v in value.dict.items()
-            }
-        )
+        state: InstanceState = inspect(value)
+        serialized = {_.key: state.dict.get(_.key) for _ in value.columns}
+        for relationship in value.relationships:
+            serialized[relationship.key] = state.dict.get(
+                relationship.key,
+                [] if relationship.uselist else None,
+            )
+        return serialize(serialized)
     elif isinstance(value, (type(None), bool, int, float, str)):
         return value
     elif isinstance(value, Decimal):

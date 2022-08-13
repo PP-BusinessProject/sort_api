@@ -25,7 +25,8 @@ from fastapi.responses import ORJSONResponse
 from orjson import dumps, loads
 from sqlalchemy.event.api import listen, remove
 from sqlalchemy.ext.asyncio.scoping import async_scoped_session
-from sqlalchemy.orm import UOWTransaction, selectinload
+from sqlalchemy.orm import UOWTransaction, joinedload, selectinload
+from sqlalchemy.orm.attributes import InstrumentedAttribute
 from sqlalchemy.orm.relationships import RelationshipProperty
 from sqlalchemy.orm.session import sessionmaker
 from sqlalchemy.sql.expression import delete, insert, or_, select, update
@@ -224,18 +225,20 @@ async def endpoint(request: Request, /) -> Response:
                                 ),
                             )
 
-                        type = None
+                        ctype = None
                         with suppress(NotImplementedError):
-                            type = column.type.python_type
-                        if type is None or isinstance(value, type):
+                            ctype = column.type.python_type
+                        if ctype is None or isinstance(
+                            value, (ctype, type(None))
+                        ):
                             pass
-                        elif type == date:
+                        elif ctype == date:
                             item[field] = isoparse(value).date()
-                        elif type == time:
+                        elif ctype == time:
                             item[field] = isoparse(value).time()
-                        elif type == datetime:
+                        elif ctype == datetime:
                             item[field] = isoparse(value)
-                        elif type == timedelta:
+                        elif ctype == timedelta:
                             if isinstance(value, (int, float)):
                                 item[field] = timedelta(seconds=value)
                         continue
@@ -302,7 +305,7 @@ async def endpoint(request: Request, /) -> Response:
             /,
             field_chain: tuple[str, ...] = (),
             relationship_chain: tuple[RelationshipProperty, ...] = (),
-        ) -> Union[Column, tuple[RelationshipProperty, ...]]:
+        ):
             column_keys, relationship_keys = get_keys(model)
             field, *relationship_fields = field.split('.')
             if is_relationship := field not in column_keys:
@@ -317,16 +320,16 @@ async def endpoint(request: Request, /) -> Response:
                         f'Field "{field}" is not present in %s.'
                         % '.'.join((table_name, *field_chain)),
                     )
+
             if is_relationship and relationship_fields:
                 for relationship in relationship_keys.values():
                     if relationship.key == field:
                         try:
-                            type = relationship.entity.class_
                             return get_field(
-                                type,
+                                relationship.entity.class_,
                                 '.'.join(relationship_fields),
                                 (*field_chain, field),
-                                (*relationship_chain, getattr(type, field)),
+                                (*relationship_chain, getattr(model, field)),
                             )
                         except AttributeError as _:
                             raise HTTPException(
@@ -340,26 +343,28 @@ async def endpoint(request: Request, /) -> Response:
                     f'Relationship "{field}" is not present in %s.'
                     % '.'.join((table_name, *field_chain)),
                 )
-            return (
-                (*relationship_chain, getattr(model, field))
-                if is_relationship
-                else column_keys[field]
-            )
+            return (*relationship_chain, getattr(model, field))
 
         column_fields: list[Column] = []
         relationship_options: list = []
         for field in query_parameters.get('field', ()):
-            field = get_field(model or table, field)
+            *relationship_chain, field = get_field(model or table, field)
             if isinstance(field, Column):
                 column_fields.append(field)
-            elif isinstance(field, RelationshipProperty):
-                relationship_options.append(selectinload(field))
-            elif isinstance(field, Iterable):
-                relationships_chain = iter(field)
-                option_ = selectinload(next(relationships_chain))
-                for relationship in relationships_chain:
+                if relationship_chain:
+                    relationship_chain = iter(relationship_chain)
+                    option_ = joinedload(next(relationship_chain))
+                    for relationship in relationship_chain:
+                        option_ = option_.joinedload(relationship)
+                    relationship_options.append(option_)
+
+            elif isinstance(field, InstrumentedAttribute):
+                relationship_chain = iter((*relationship_chain, field))
+                option_ = selectinload(next(relationship_chain))
+                for relationship in relationship_chain:
                     option_ = option_.selectinload(relationship)
                 relationship_options.append(option_)
+
             else:
                 raise HTTPException(
                     HTTP_500_INTERNAL_SERVER_ERROR,
@@ -419,7 +424,14 @@ async def endpoint(request: Request, /) -> Response:
                 return (await Session.scalars(statement)).all()
 
             if not option:
-                return response(await get_response())
+                try:
+                    return response(await get_response())
+                except TypeError as _:
+                    raise HTTPException(
+                        HTTP_500_INTERNAL_SERVER_ERROR,
+                        'Request was valid, but could not process response '
+                        'correctly.',
+                    ) from _
 
             if isinstance(session := Session.session_factory, sessionmaker):
                 session = session.class_

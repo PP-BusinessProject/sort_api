@@ -2,7 +2,12 @@ from typing import Final, Tuple
 
 from ._mixins import Timestamped
 from .base_interface import BaseInterface
-from .bonuses import BonusCouponModel, BonusModel, BonusPriceModel
+from .bonuses import (
+    BonusCouponModel,
+    BonusImageModel,
+    BonusModel,
+    BonusPriceModel,
+)
 from .clients import (
     CompanyModel,
     DealModel,
@@ -30,6 +35,7 @@ from .locales import LocaleModel, LocaleTextModel, TextModel
 from .misc import (
     AddressModel,
     BankModel,
+    ImageModel,
     MeasurementModel,
     PriceModel,
     SettingsModel,
@@ -40,6 +46,7 @@ __all__: Final[Tuple[str, ...]] = (
     'Timestamped',
     'BaseInterface',
     'BonusCouponModel',
+    'BonusImageModel',
     'BonusModel',
     'BonusPriceModel',
     'CompanyModel',
@@ -67,6 +74,7 @@ __all__: Final[Tuple[str, ...]] = (
     'TextModel',
     'AddressModel',
     'BankModel',
+    'ImageModel',
     'MeasurementModel',
     'PriceModel',
     'SettingsModel',

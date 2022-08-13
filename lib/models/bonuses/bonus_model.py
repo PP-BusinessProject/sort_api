@@ -2,9 +2,9 @@ from typing import TYPE_CHECKING, Final
 
 from sqlalchemy.orm import relationship
 from sqlalchemy.orm.relationships import RelationshipProperty
+from sqlalchemy.sql.expression import literal_column
 from sqlalchemy.sql.schema import CheckConstraint, Column, ForeignKey
 from sqlalchemy.sql.sqltypes import Integer, SmallInteger, String
-from sqlalchemy.sql.expression import literal_column
 
 from .._mixins import Timestamped
 from ..base_interface import Base
@@ -12,6 +12,7 @@ from ..clients.user_model import UserModel
 
 if TYPE_CHECKING:
     from .bonus_coupon_model import BonusCouponModel
+    from .bonus_image_model import BonusImageModel
     from .bonus_price_model import BonusPriceModel
 
 
@@ -49,13 +50,29 @@ class BonusModel(Timestamped, Base):
         key='description',
     )
     user_limit: Final[Column[int]] = Column(
-        'TotalCount',
+        'UserLimit',
         Integer,
         nullable=False,
         default=0,
-        key='total_count',
+        key='user_limit',
     )
 
+    owner: Final['RelationshipProperty[UserModel]'] = relationship(
+        'UserModel',
+        back_populates='bonuses',
+        lazy='noload',
+        cascade='save-update',
+        uselist=False,
+    )
+    images: Final[
+        'RelationshipProperty[list[BonusImageModel]]'
+    ] = relationship(
+        'BonusImageModel',
+        back_populates='bonus',
+        lazy='noload',
+        cascade='save-update, merge, expunge, delete, delete-orphan',
+        uselist=True,
+    )
     coupons: Final[
         'RelationshipProperty[list[BonusCouponModel]]'
     ] = relationship(
