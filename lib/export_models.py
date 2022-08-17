@@ -116,7 +116,7 @@ async def main(
                 default=[] if relationship.uselist else None,
                 doc=relationship.doc,
                 nullable=not relationship.uselist,
-                equality=False,
+                equality=True,
             )
 
     with open(export_path, 'wb') as export:

@@ -103,16 +103,26 @@ def serialize(value: Any, /, *, encoding: str = 'utf8') -> Serializable:
     pass
 
 
-def serialize(value: Any, /, *, encoding: str = 'utf8') -> Serializable:
+def serialize(
+    value: Any,
+    /,
+    checked: Iterable[BaseInterface] = (),
+    *,
+    encoding: str = 'utf8',
+) -> Serializable:
     if isinstance(value, BaseInterface):
         state: InstanceState = inspect(value)
         serialized = {_.key: state.dict.get(_.key) for _ in value.columns}
         for relationship in value.relationships:
-            serialized[relationship.key] = state.dict.get(
-                relationship.key,
-                [] if relationship.uselist else None,
-            )
-        return serialize(serialized)
+            _def = [] if relationship.uselist else None
+            if (_value := state.dict.get(relationship.key, _def)) in checked:
+                _value = None
+            elif isinstance(_value, list):
+                for checked_model in checked:
+                    while checked_model in _value:
+                        _value.remove(checked_model)
+            serialized[relationship.key] = _value
+        return serialize(serialized, (*checked, value))
     elif isinstance(value, (type(None), bool, int, float, str)):
         return value
     elif isinstance(value, Decimal):
@@ -128,9 +138,12 @@ def serialize(value: Any, /, *, encoding: str = 'utf8') -> Serializable:
     elif isinstance(value, Callable):
         return f'{value.__module__}.{value.__name__}'
     elif isinstance(value, dict):
-        return {serialize(k): serialize(v) for k, v in value.items()}
+        return {
+            serialize(k, checked): serialize(v, checked)
+            for k, v in value.items()
+        }
     elif isinstance(value, Iterable):
-        return list(map(serialize, value))
+        return [serialize(_, checked) for _ in value]
     else:
         raise TypeError(f'Unserializable type "{type(value)}": {value}')
 
