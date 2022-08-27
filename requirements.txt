@@ -2,7 +2,7 @@ asyncpg==0.26.0
 fastapi==0.79.0
 gunicorn==20.1.0
 inflect==6.0.0
-orjson==3.7.11
+orjson==3.7.12
 python-dateutil==2.8.2
 sqlalchemy==1.4.39
 sse-starlette==1.1.6

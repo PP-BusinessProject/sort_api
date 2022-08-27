@@ -8,7 +8,7 @@ from sqlalchemy.sql.sqltypes import Numeric
 
 from .._mixins import Timestamped
 from ..base_interface import Base
-from ..clients.service_model import ServiceModel
+from ..clients.services.service_model import ServiceModel
 from .delivery_model import DeliveryModel
 
 

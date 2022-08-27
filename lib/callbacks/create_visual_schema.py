@@ -30,7 +30,7 @@ def create_visual_schema(
         )
 
     try:
-        from eralchemy import render_er
+        from eralchemy2 import render_er
     except ImportError:
         return logger.warning(
             'Cannot proceed visual schema creation. '

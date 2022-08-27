@@ -23,6 +23,7 @@ class BonusCouponModel(Timestamped, Base):
     hash: Final[Column[str]] = Column(
         'Hash',
         String(64),
+        CheckConstraint('"Hash" <> \'\''),
         nullable=False,
         key='hash',
     )

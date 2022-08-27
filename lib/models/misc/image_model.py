@@ -11,6 +11,8 @@ from ..base_interface import Base
 if TYPE_CHECKING:
     from ..bonuses.bonus_image_model import BonusImageModel
 
+    from ..containers.container_image_model import ContainerImageModel
+
 
 class ImageModel(Timestamped, Base):
     id: Final[Column[int]] = Column(
@@ -32,6 +34,15 @@ class ImageModel(Timestamped, Base):
         'RelationshipProperty[list[BonusImageModel]]'
     ] = relationship(
         'BonusImageModel',
+        back_populates='image',
+        lazy='noload',
+        cascade='save-update, merge, expunge, delete, delete-orphan',
+        uselist=True,
+    )
+    containers: Final[
+        'RelationshipProperty[list[ContainerImageModel]]'
+    ] = relationship(
+        'ContainerImageModel',
         back_populates='image',
         lazy='noload',
         cascade='save-update, merge, expunge, delete, delete-orphan',

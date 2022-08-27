@@ -14,6 +14,7 @@ if TYPE_CHECKING:
     from .bonus_coupon_model import BonusCouponModel
     from .bonus_image_model import BonusImageModel
     from .bonus_price_model import BonusPriceModel
+    from .bonus_locale_model import BonusLocaleModel
 
 
 class BonusModel(Timestamped, Base):
@@ -35,19 +36,19 @@ class BonusModel(Timestamped, Base):
         autoincrement=True,
         key='id',
     )
-    name: Final[Column[str]] = Column(
-        'Name',
+    fallback_name: Final[Column[str]] = Column(
+        'FallbackName',
         String(255),
-        CheckConstraint('"Name" <> \'\''),
+        CheckConstraint('"FallbackName" <> \'\''),
         nullable=False,
-        key='name',
+        key='fallback_name',
     )
-    description: Final[Column[str]] = Column(
-        'Description',
+    fallback_description: Final[Column[str]] = Column(
+        'FallbackDescription',
         String(1023),
         nullable=False,
         default='',
-        key='description',
+        key='fallback_description',
     )
     user_limit: Final[Column[int]] = Column(
         'UserLimit',
@@ -63,6 +64,15 @@ class BonusModel(Timestamped, Base):
         lazy='noload',
         cascade='save-update',
         uselist=False,
+    )
+    locales: Final[
+        'RelationshipProperty[list[BonusLocaleModel]]'
+    ] = relationship(
+        'BonusLocaleModel',
+        back_populates='bonus',
+        lazy='noload',
+        cascade='save-update, merge, expunge, delete, delete-orphan',
+        uselist=True,
     )
     images: Final[
         'RelationshipProperty[list[BonusImageModel]]'

@@ -15,16 +15,17 @@ from ..user_interface import UserInterface
 if TYPE_CHECKING:
     from ..bonuses.bonus_model import BonusModel
     from ..containers.container_model import ContainerModel
-    from ..containers.container_tank_clearing_model import (
+    from ..containers.tanks.operations.container_tank_clearing_model import (
         ContainerTankClearingModel,
     )
-    from ..containers.container_tank_opening_model import (
+    from ..containers.tanks.operations.container_tank_opening_model import (
         ContainerTankOpeningModel,
     )
-    from .company_model import CompanyModel
-    from .deal_model import DealModel
-    from .group_model import GroupModel
+    from .companies.company_model import CompanyModel
+    from .deals.deal_model import DealModel
+    from .groups.group_model import GroupModel
     from .person_model import PersonModel
+    from .user_locale_model import UserLocaleModel
 
 
 class UserModel(UserInterface, Timestamped, Base):
@@ -77,6 +78,15 @@ class UserModel(UserInterface, Timestamped, Base):
     def is_driver(cls: Type[Self], /) -> ClauseElement:
         return cls.id <= literal_column(str(cls.DRIVER_ID))
 
+    locales: Final[
+        'RelationshipProperty[list[UserLocaleModel]]'
+    ] = relationship(
+        'UserLocaleModel',
+        back_populates='user',
+        lazy='noload',
+        cascade='save-update, merge, expunge, delete, delete-orphan',
+        uselist=True,
+    )
     deals: Final['RelationshipProperty[list[DealModel]]'] = relationship(
         'DealModel',
         back_populates='owner',

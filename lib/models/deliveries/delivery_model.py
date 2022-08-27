@@ -10,7 +10,7 @@ from sqlalchemy.sql.sqltypes import Boolean, Integer, Numeric, DateTime
 from .._mixins import Timestamped
 from ..base_interface import Base
 from ..clients.user_model import UserModel
-from ..misc.address_model import AddressModel
+from ..misc.addresses.address_model import AddressModel
 
 if TYPE_CHECKING:
     from .delivery_service_model import DeliveryServiceModel

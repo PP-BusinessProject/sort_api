@@ -15,22 +15,23 @@ from .base_interface import BaseInterface
 
 class UserInterface(BaseInterface):
     @declared_attr
-    def first_name(self: Self, /) -> Column[str]:
+    def fallback_first_name(self: Self, /) -> Column[str]:
         return Column(
-            'FirstName',
+            'FallbackFirstName',
             String(64),
-            CheckConstraint('"FirstName" <> \'\''),
+            CheckConstraint('"FallbackFirstName" <> \'\''),
             nullable=False,
-            key='first_name',
+            key='fallback_first_name',
         )
 
     @declared_attr
-    def last_name(self: Self, /) -> Column[Optional[str]]:
+    def fallback_last_name(self: Self, /) -> Column[str]:
         return Column(
-            'LastName',
+            'FallbackLastName',
             String(64),
-            CheckConstraint('"LastName" <> \'\''),
-            key='last_name',
+            nullable=False,
+            default='',
+            key='fallback_last_name',
         )
 
     @declared_attr
@@ -59,23 +60,28 @@ class UserInterface(BaseInterface):
         return Column('Birthday', Date, key='birthday')
 
     @hybrid_property
-    def full_name(self: Self, /) -> str:
+    def fallback_full_name(self: Self, /) -> str:
         """Return the name of this user."""
-        return ' '.join(_ for _ in (self.first_name, self.last_name) if _)
+        return ' '.join(
+            _ for _ in (self.fallback_first_name, self.fallback_last_name) if _
+        )
 
-    @full_name.setter
-    def full_name(self: Self, value: str, /) -> None:
+    @fallback_full_name.setter
+    def fallback_full_name(self: Self, value: str, /) -> None:
         if not value:
             raise ValueError('value is empty.')
-        self.first_name, self.last_name, *_ = value.split(' ', 1), ''
+        self.fallback_first_name, self.fallback_last_name, *_ = (
+            value.split(' ', 1),
+            '',
+        )
 
-    @full_name.expression
-    def full_name(cls: Type[Self], /) -> ClauseElement:
-        last_name_check = func.nullif(cls.last_name, '')
-        return func.concat_ws(' ', cls.first_name, last_name_check)
+    @fallback_full_name.expression
+    def fallback_full_name(cls: Type[Self], /) -> ClauseElement:
+        last_name_check = func.nullif(cls.fallback_last_name, '')
+        return func.concat_ws(' ', cls.fallback_first_name, last_name_check)
 
-    @full_name.update_expression
-    def full_name(
+    @fallback_full_name.update_expression
+    def fallback_full_name(
         cls: Type[Self],
         value: str,
         /,
@@ -83,4 +89,7 @@ class UserInterface(BaseInterface):
         if not value:
             raise ValueError('value is empty.')
         first_name, last_name, *_ = value.split(' ', 1), ''
-        return [(cls.first_name, first_name), (cls.last_name, last_name)]
+        return [
+            (cls.fallback_first_name, first_name),
+            (cls.fallback_last_name, last_name),
+        ]

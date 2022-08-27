@@ -9,11 +9,12 @@ from sqlalchemy.sql.sqltypes import Numeric, SmallInteger
 from .._mixins import Timestamped
 from ..base_interface import Base
 from ..clients.user_model import UserModel
-from ..misc.address_model import AddressModel
+from ..misc.addresses.address_model import AddressModel
 
 if TYPE_CHECKING:
-    from .container_report_model import ContainerReportModel
-    from .container_tank_model import ContainerTankModel
+    from .container_image_model import ContainerImageModel
+    from .reports.container_report_model import ContainerReportModel
+    from .tanks.container_tank_model import ContainerTankModel
 
 
 class ContainerModel(Timestamped, Base):
@@ -49,6 +50,13 @@ class ContainerModel(Timestamped, Base):
         key='address_id',
     )
 
+    owner: Final['RelationshipProperty[UserModel]'] = relationship(
+        'UserModel',
+        back_populates='containers',
+        lazy='noload',
+        cascade='save-update',
+        uselist=False,
+    )
     address: Final['RelationshipProperty[AddressModel]'] = relationship(
         'AddressModel',
         back_populates='containers',
@@ -56,12 +64,14 @@ class ContainerModel(Timestamped, Base):
         cascade='save-update',
         uselist=False,
     )
-    owner: Final['RelationshipProperty[UserModel]'] = relationship(
-        'UserModel',
-        back_populates='containers',
+    images: Final[
+        'RelationshipProperty[list[ContainerImageModel]]'
+    ] = relationship(
+        'ContainerImageModel',
+        back_populates='container',
         lazy='noload',
-        cascade='save-update',
-        uselist=False,
+        cascade='save-update, merge, expunge, delete, delete-orphan',
+        uselist=True,
     )
     tanks: Final[
         'RelationshipProperty[list[ContainerTankModel]]'

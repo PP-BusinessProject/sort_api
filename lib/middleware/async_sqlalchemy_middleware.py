@@ -19,7 +19,7 @@ from typing_extensions import Self
 from ..utils.anyfunction import anycorofunction
 
 SerializedValue = Union[str, int, float]
-ColumnFilter = Tuple[SerializedValue, operator]
+ColumnFilter = Tuple[SerializedValue, Union[str, operator]]
 
 
 @dataclass(init=False, frozen=True)

@@ -5,17 +5,8 @@ from datetime import date, datetime, time, timedelta
 from operator import eq, ge, gt, le, lt, ne
 from queue import Empty, Queue
 from types import MappingProxyType
-from typing import (
-    Any,
-    AsyncGenerator,
-    Dict,
-    Final,
-    Iterable,
-    List,
-    Optional,
-    Type,
-    Union,
-)
+from typing import (Any, AsyncGenerator, Dict, Final, Iterable, List, Optional,
+                    Type, Union)
 
 from dateutil.parser import isoparse
 from dateutil.tz.tz import tzlocal
@@ -30,28 +21,24 @@ from sqlalchemy.orm.attributes import InstrumentedAttribute
 from sqlalchemy.orm.relationships import RelationshipProperty
 from sqlalchemy.orm.session import sessionmaker
 from sqlalchemy.sql.expression import delete, insert, or_, select, update
-from sqlalchemy.sql.functions import count
+from sqlalchemy.sql.functions import count, func
 from sqlalchemy.sql.schema import Column, MetaData, Table
 from sse_starlette import EventSourceResponse
 from starlette.requests import Request
 from starlette.responses import Response
-from starlette.status import (
-    HTTP_204_NO_CONTENT,
-    HTTP_304_NOT_MODIFIED,
-    HTTP_400_BAD_REQUEST,
-    HTTP_406_NOT_ACCEPTABLE,
-    HTTP_500_INTERNAL_SERVER_ERROR,
-)
+from starlette.status import (HTTP_204_NO_CONTENT, HTTP_304_NOT_MODIFIED,
+                              HTTP_400_BAD_REQUEST, HTTP_406_NOT_ACCEPTABLE,
+                              HTTP_500_INTERNAL_SERVER_ERROR)
 
 from ..middleware.async_sqlalchemy_middleware import ColumnFilter
 from ..models.base_interface import Base, BaseInterface, serialize
 
 #
-OperatorDict: Final[MappingProxyType[str, operator]] = MappingProxyType(
+OperatorDict: Final[
+    MappingProxyType[str, Optional[operator]]
+] = MappingProxyType(
     {'>=': ge, '<=': le, '>': gt, '<': lt, '!': ne, '=': eq}
-)
-InverseOperatorDict: Final[MappingProxyType[operator, str]] = MappingProxyType(
-    {ge: '>=', le: '<=', gt: '>', lt: '<', ne: '!', eq: '='}
+    | {'@@': None, '@>': None}
 )
 SQLAlhemyMethodDict: Final[
     MappingProxyType[str, Type[Any]]
@@ -129,7 +116,7 @@ async def endpoint(request: Request, /) -> Response:
 
             columns[column.key] = []
             for value in query_parameters.get(column.key, ()):
-                op: operator = eq
+                op: Optional[operator] = eq
                 for op_key, op in OperatorDict.items():
                     if value.startswith(op_key):
                         value = value.removeprefix(op_key)
@@ -149,7 +136,7 @@ async def endpoint(request: Request, /) -> Response:
                             f'invalid: {value}',
                         ) from _
 
-                columns[column.key].append((value, op))
+                columns[column.key].append((value, op or op_key))
         return columns
 
     option: str = request.path_params.get('option', '').lower()
@@ -379,7 +366,11 @@ async def endpoint(request: Request, /) -> Response:
             statement = statement.where(
                 or_(
                     *(
-                        op(getattr(table.c, key), value)
+                        getattr(table.c, key).op(op)(
+                            func.to_tsquery(value) if op == '@@' else value
+                        )
+                        if isinstance(op, str)
+                        else op(getattr(table.c, key), value)
                         for key, values in columns.items()
                         for value, op in values
                     )

@@ -8,7 +8,7 @@ from sqlalchemy.sql.sqltypes import Numeric
 
 from .._mixins import Timestamped
 from ..base_interface import Base
-from ..misc.price_model import PriceModel
+from ..misc.prices.price_model import PriceModel
 from .bonus_model import BonusModel
 
 
