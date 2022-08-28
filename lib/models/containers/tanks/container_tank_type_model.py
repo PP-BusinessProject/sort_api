@@ -3,8 +3,8 @@ from typing import TYPE_CHECKING, Final
 
 from sqlalchemy.orm import relationship
 from sqlalchemy.orm.relationships import RelationshipProperty
-from sqlalchemy.sql.schema import Column, ForeignKey, CheckConstraint
-from sqlalchemy.sql.sqltypes import Integer, SmallInteger, Interval, String
+from sqlalchemy.sql.schema import CheckConstraint, Column, ForeignKey
+from sqlalchemy.sql.sqltypes import Integer, Interval, SmallInteger, String
 
 from ..._mixins import Timestamped
 from ...base_interface import Base
@@ -28,7 +28,7 @@ class ContainerTankTypeModel(Timestamped, Base):
         String(255),
         CheckConstraint('"FallbackName" <> \'\''),
         nullable=False,
-        key='name_key',
+        key='fallback_name',
     )
     measurement_id: Final[Column[int]] = Column(
         'MeasurementId',
