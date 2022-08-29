@@ -11,19 +11,22 @@ from sqlalchemy.sql.schema import (
 )
 from sqlalchemy.sql.sqltypes import String
 
-from ..._mixins import Timestamped
-from ...base_interface import Base
-from ..locales.locale_model import LocaleModel
-from .price_model import PriceModel
+from ..base_interface import Base
+from ..misc.locales.locale_model import LocaleModel
+from .nomenclature_model import NomenclatureModel
 
 
-class PriceLocaleModel(Timestamped, Base):
-    price_id: Final[Column[str]] = Column(
-        'PriceId',
-        PriceModel.id.type,
-        ForeignKey(PriceModel.id, onupdate='CASCADE', ondelete='CASCADE'),
+class NomenclatureLocaleModel(Base):
+    nomenclature_id: Final[Column[int]] = Column(
+        'NomenclatureId',
+        NomenclatureModel.id.type,
+        ForeignKey(
+            NomenclatureModel.id,
+            onupdate='CASCADE',
+            ondelete='CASCADE',
+        ),
         primary_key=True,
-        key='price_id',
+        key='nomenclature_id',
     )
     locale_language_code: Final[Column[str]] = Column(
         'LocaleLanguageCode',
@@ -45,16 +48,24 @@ class PriceLocaleModel(Timestamped, Base):
         nullable=False,
         key='name',
     )
+    description: Final[Column[str]] = Column(
+        'Description',
+        String(1023),
+        nullable=False,
+        key='description',
+    )
 
     locale: Final['RelationshipProperty[LocaleModel]'] = relationship(
         'LocaleModel',
-        back_populates='price_locales',
+        back_populates='nomenclature_locales',
         lazy='noload',
         cascade='save-update',
         uselist=False,
     )
-    price: Final['RelationshipProperty[PriceModel]'] = relationship(
-        'PriceModel',
+    nomenclature: Final[
+        'RelationshipProperty[NomenclatureModel]'
+    ] = relationship(
+        'NomenclatureModel',
         back_populates='locales',
         lazy='noload',
         cascade='save-update',

@@ -1,13 +1,19 @@
-from typing import Final
+from typing import Any, Dict, Final, Tuple, Union
 
 from sqlalchemy.orm import relationship
 from sqlalchemy.orm.relationships import RelationshipProperty
-from sqlalchemy.sql.schema import CheckConstraint, Column, ForeignKey
+from sqlalchemy.sql.schema import (
+    CheckConstraint,
+    Column,
+    ForeignKey,
+    ForeignKeyConstraint,
+    SchemaItem,
+)
 from sqlalchemy.sql.sqltypes import String
 
 from ...base_interface import Base
-from .address_model import AddressModel
 from ..locales.locale_model import LocaleModel
+from .address_model import AddressModel
 
 
 class AddressLocaleModel(Base):
@@ -22,16 +28,17 @@ class AddressLocaleModel(Base):
         autoincrement=True,
         key='address_id',
     )
-    locale_alpha_2: Final[Column[str]] = Column(
-        'LocaleAlpha2',
-        LocaleModel.alpha_2.type,
-        ForeignKey(
-            LocaleModel.alpha_2,
-            onupdate='CASCADE',
-            ondelete='RESTRICT',
-        ),
+    locale_language_code: Final[Column[str]] = Column(
+        'LocaleLanguageCode',
+        LocaleModel.language_code.type,
         primary_key=True,
-        key='locale_alpha_2',
+        key='locale_language_code',
+    )
+    locale_country_code: Final[Column[str]] = Column(
+        'LocaleCountryCode',
+        LocaleModel.country_code.type,
+        primary_key=True,
+        key='locale_country_code',
     )
 
     country: Final[Column[str]] = Column(
@@ -77,4 +84,13 @@ class AddressLocaleModel(Base):
         lazy='noload',
         cascade='save-update',
         uselist=False,
+    )
+
+    __table_args__: Final[Tuple[Union[SchemaItem, Dict[str, Any]]]] = (
+        ForeignKeyConstraint(
+            [locale_language_code, locale_country_code],
+            [LocaleModel.language_code, LocaleModel.country_code],
+            onupdate='CASCADE',
+            ondelete='RESTRICT',
+        ),
     )

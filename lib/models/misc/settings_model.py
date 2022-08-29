@@ -1,6 +1,13 @@
-from typing import Final, Literal
+from typing import Any, Dict, Final, Literal, Optional, Tuple, Union
 
-from sqlalchemy.sql.schema import CheckConstraint, Column, ForeignKey
+from sqlalchemy.orm import relationship
+from sqlalchemy.orm.relationships import RelationshipProperty
+from sqlalchemy.sql.schema import (
+    CheckConstraint,
+    Column,
+    ForeignKeyConstraint,
+    SchemaItem,
+)
 from sqlalchemy.sql.sqltypes import Boolean
 
 from .._mixins import Timestamped
@@ -19,15 +26,33 @@ class SettingsModel(Timestamped, Base):
         default=True,
         key='id',
     )
-    fallback_locale_alpha_2: Final[Column[str]] = Column(
-        'FallbackLocaleAlpha2',
-        LocaleModel.alpha_2.type,
-        ForeignKey(
-            LocaleModel.alpha_2,
+
+    fallback_locale_language_code: Final[Column[Optional[str]]] = Column(
+        'FallbackLocaleLanguageCode',
+        LocaleModel.language_code.type,
+        key='fallback_locale_language_code',
+    )
+    fallback_locale_country_code: Final[Column[Optional[str]]] = Column(
+        'FallbackLocaleCountryCode',
+        LocaleModel.country_code.type,
+        key='fallback_locale_country_code',
+    )
+
+    fallback_locale: Final[
+        'RelationshipProperty[Optional[LocaleModel]]'
+    ] = relationship(
+        'LocaleModel',
+        back_populates='settings',
+        lazy='noload',
+        cascade='save-update',
+        uselist=False,
+    )
+
+    __table_args__: Final[Tuple[Union[SchemaItem, Dict[str, Any]]]] = (
+        ForeignKeyConstraint(
+            [fallback_locale_language_code, fallback_locale_country_code],
+            [LocaleModel.language_code, LocaleModel.country_code],
             onupdate='CASCADE',
             ondelete='RESTRICT',
         ),
-        nullable=False,
-        default='uk',
-        key='fallback_locale_alpha_2',
     )

@@ -1,23 +1,21 @@
-from typing import TYPE_CHECKING, Final
+from typing import TYPE_CHECKING, Final, Optional
 
 from sqlalchemy.orm import relationship
 from sqlalchemy.orm.relationships import RelationshipProperty
-from sqlalchemy.sql.schema import CheckConstraint, Column
+from sqlalchemy.sql.schema import CheckConstraint, Column, ForeignKey
 from sqlalchemy.sql.sqltypes import Integer, String
+from typing_extensions import Self
 
-from ..._mixins import Timestamped
 from ...base_interface import Base
 
 if TYPE_CHECKING:
-    from ...nomenclatures.nomenclature_model import NomenclatureModel
-    from ...containers.tanks.container_tank_type_model import (
-        ContainerTankTypeModel,
+    from .nomenclature_category_locale_model import (
+        NomenclatureCategoryLocaleModel,
     )
-    from .measurement_locale_model import MeasurementLocaleModel
-    from ...bonuses.bonus_model import BonusModel
+    from ..nomenclature_model import NomenclatureModel
 
 
-class MeasurementModel(Timestamped, Base):
+class NomenclatureCategoryModel(Base):
     id: Final[Column[int]] = Column(
         'Id',
         Integer,
@@ -25,6 +23,13 @@ class MeasurementModel(Timestamped, Base):
         autoincrement=True,
         key='id',
     )
+    parent_id: Final[Column[Optional[int]]] = Column(
+        'ParentId',
+        id.type,
+        ForeignKey(id, onupdate='CASCADE', ondelete='CASCADE'),
+        key='parent_id',
+    )
+
     fallback_name: Final[Column[str]] = Column(
         'FallbackName',
         String(255),
@@ -34,26 +39,25 @@ class MeasurementModel(Timestamped, Base):
     )
 
     locales: Final[
-        'RelationshipProperty[list[MeasurementLocaleModel]]'
+        'RelationshipProperty[list[NomenclatureCategoryLocaleModel]]'
     ] = relationship(
-        'MeasurementLocaleModel',
-        back_populates='measurement',
+        'NomenclatureCategoryLocaleModel',
+        back_populates='category',
         lazy='noload',
         cascade='save-update, merge, expunge, delete, delete-orphan',
         uselist=True,
     )
-    bonuses: Final['RelationshipProperty[list[BonusModel]]'] = relationship(
-        'BonusModel',
-        back_populates='measurement',
+    parent: Final['RelationshipProperty[Optional[Self]]'] = relationship(
+        'NomenclatureCategoryModel',
+        back_populates='children',
         lazy='noload',
-        cascade='save-update, merge, expunge, delete, delete-orphan',
-        uselist=True,
+        cascade='save-update',
+        remote_side=[id],
+        uselist=False,
     )
-    container_tank_types: Final[
-        'RelationshipProperty[list[ContainerTankTypeModel]]'
-    ] = relationship(
-        'ContainerTankTypeModel',
-        back_populates='measurement',
+    children: Final['RelationshipProperty[list[Self]]'] = relationship(
+        'NomenclatureCategoryModel',
+        back_populates='parent',
         lazy='noload',
         cascade='save-update, merge, expunge, delete, delete-orphan',
         uselist=True,
@@ -62,7 +66,7 @@ class MeasurementModel(Timestamped, Base):
         'RelationshipProperty[list[NomenclatureModel]]'
     ] = relationship(
         'NomenclatureModel',
-        back_populates='measurement',
+        back_populates='category',
         lazy='noload',
         cascade='save-update, merge, expunge, delete, delete-orphan',
         uselist=True,

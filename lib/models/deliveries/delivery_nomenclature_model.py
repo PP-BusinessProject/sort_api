@@ -8,11 +8,11 @@ from sqlalchemy.sql.sqltypes import Numeric
 
 from .._mixins import Timestamped
 from ..base_interface import Base
-from ..clients.services.service_model import ServiceModel
+from ..nomenclatures.nomenclature_model import NomenclatureModel
 from .delivery_model import DeliveryModel
 
 
-class DeliveryServiceModel(Timestamped, Base):
+class DeliveryNomenclatureModel(Timestamped, Base):
     delivery_id: Final[Column[int]] = Column(
         'UserId',
         DeliveryModel.id.type,
@@ -20,12 +20,16 @@ class DeliveryServiceModel(Timestamped, Base):
         primary_key=True,
         key='user_id',
     )
-    service_id: Final[Column[int]] = Column(
-        'ServiceId',
-        ServiceModel.id.type,
-        ForeignKey(ServiceModel.id, onupdate='CASCADE', ondelete='RESTRICT'),
+    nomenclature_id: Final[Column[int]] = Column(
+        'NomenclatureId',
+        NomenclatureModel.id.type,
+        ForeignKey(
+            NomenclatureModel.id,
+            onupdate='CASCADE',
+            ondelete='RESTRICT',
+        ),
         primary_key=True,
-        key='service_id',
+        key='nomenclature_id',
     )
     amount: Final[Column[Decimal]] = Column(
         'Amount',
@@ -40,13 +44,15 @@ class DeliveryServiceModel(Timestamped, Base):
         'RelationshipProperty[list[DeliveryModel]]'
     ] = relationship(
         'DeliveryModel',
-        back_populates='services',
+        back_populates='nomenclatures',
         lazy='noload',
         cascade='save-update',
         uselist=False,
     )
-    service: Final['RelationshipProperty[list[ServiceModel]]'] = relationship(
-        'ServiceModel',
+    nomenclature: Final[
+        'RelationshipProperty[list[NomenclatureModel]]'
+    ] = relationship(
+        'NomenclatureModel',
         lazy='noload',
         cascade='save-update',
         uselist=False,

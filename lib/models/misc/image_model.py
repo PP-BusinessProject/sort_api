@@ -12,6 +12,7 @@ if TYPE_CHECKING:
     from ..bonuses.bonus_image_model import BonusImageModel
 
     from ..containers.container_image_model import ContainerImageModel
+    from ..nomenclatures.nomenclature_image_model import NomenclatureImageModel
 
 
 class ImageModel(Timestamped, Base):
@@ -43,6 +44,15 @@ class ImageModel(Timestamped, Base):
         'RelationshipProperty[list[ContainerImageModel]]'
     ] = relationship(
         'ContainerImageModel',
+        back_populates='image',
+        lazy='noload',
+        cascade='save-update, merge, expunge, delete, delete-orphan',
+        uselist=True,
+    )
+    nomenclatures: Final[
+        'RelationshipProperty[list[NomenclatureImageModel]]'
+    ] = relationship(
+        'NomenclatureImageModel',
         back_populates='image',
         lazy='noload',
         cascade='save-update, merge, expunge, delete, delete-orphan',

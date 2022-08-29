@@ -89,18 +89,18 @@ class UserModel(UserInterface, Timestamped, Base):
     )
     deals: Final['RelationshipProperty[list[DealModel]]'] = relationship(
         'DealModel',
-        back_populates='owner',
+        back_populates='user',
         lazy='noload',
         cascade='save-update, merge, expunge, delete, delete-orphan',
         uselist=True,
     )
     active_deal: Final['RelationshipProperty[DealModel]'] = relationship(
         'DealModel',
-        back_populates='owner',
+        back_populates='user',
         lazy='noload',
         primaryjoin='and_(DealModel.is_active, '
-        'UserModel.id == DealModel.owner_id)',
-        cascade='save-update, merge, expunge, delete, delete-orphan',
+        'UserModel.id == DealModel.user_id)',
+        cascade='save-update',
         uselist=False,
         overlaps='deals',
     )
@@ -110,7 +110,7 @@ class UserModel(UserInterface, Timestamped, Base):
         lazy='noload',
         primaryjoin='and_(UserModel.is_company, '
         'UserModel.id == CompanyModel.registry_number)',
-        cascade='save-update, merge, expunge, delete, delete-orphan',
+        cascade='save-update',
         uselist=False,
     )
     person: Final['RelationshipProperty[PersonModel]'] = relationship(
@@ -119,14 +119,23 @@ class UserModel(UserInterface, Timestamped, Base):
         lazy='noload',
         primaryjoin='and_(UserModel.is_person, '
         'UserModel.id == PersonModel.user_id)',
-        cascade='save-update, merge, expunge, delete, delete-orphan',
+        cascade='save-update',
         uselist=False,
+    )
+    refferals: Final['RelationshipProperty[list[PersonModel]]'] = relationship(
+        'PersonModel',
+        back_populates='refferal',
+        lazy='noload',
+        primaryjoin='and_(UserModel.is_person, '
+        'UserModel.id == PersonModel.refferal_id)',
+        cascade='save-update, merge, expunge, delete, delete-orphan',
+        uselist=True,
     )
     group: Final['RelationshipProperty[GroupModel]'] = relationship(
         'GroupModel',
         back_populates='owner',
         lazy='noload',
-        cascade='save-update, merge, expunge, delete, delete-orphan',
+        cascade='save-update',
         uselist=False,
     )
     bonuses: Final['RelationshipProperty[list[BonusModel]]'] = relationship(

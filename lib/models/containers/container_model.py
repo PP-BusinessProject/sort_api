@@ -3,7 +3,8 @@ from typing import TYPE_CHECKING, Final, Optional
 
 from sqlalchemy.orm import relationship
 from sqlalchemy.orm.relationships import RelationshipProperty
-from sqlalchemy.sql.schema import Column, ForeignKey
+from sqlalchemy.sql.elements import literal_column
+from sqlalchemy.sql.schema import CheckConstraint, Column, ForeignKey
 from sqlalchemy.sql.sqltypes import Numeric, SmallInteger
 
 from .._mixins import Timestamped
@@ -22,6 +23,10 @@ class ContainerModel(Timestamped, Base):
         'OwnerId',
         UserModel.id.type,
         ForeignKey(UserModel.id, onupdate='CASCADE', ondelete='SET NULL'),
+        CheckConstraint(
+            literal_column('"OwnerId"')
+            >= literal_column(str(UserModel.COMPANY_ID))
+        ),
         key='owner_id',
     )
     id: Final[Column[int]] = Column(

@@ -13,7 +13,7 @@ def create_visual_schema(
     /,
     path: Optional[Union[str, Path]] = None,
     *,
-    force: bool = True,
+    force: bool = False,
     **kwargs: Any,
 ) -> None:
     if not isinstance(metadata, MetaData):

@@ -1,8 +1,8 @@
-from typing import TYPE_CHECKING, Final
+from typing import TYPE_CHECKING, Final, Optional
 
 from sqlalchemy.orm import relationship
 from sqlalchemy.orm.relationships import RelationshipProperty
-from sqlalchemy.sql.schema import Column
+from sqlalchemy.sql.schema import Column, CheckConstraint
 
 from ..._mixins import Timestamped
 from ..._types import CaseInsensitiveUnicode
@@ -10,13 +10,21 @@ from ...base_interface import Base
 
 if TYPE_CHECKING:
     from ...bonuses.bonus_locale_model import BonusLocaleModel
+    from ...bonuses.categories.bonus_category_locale_model import (
+        BonusCategoryLocaleModel,
+    )
     from ...clients.companies.company_contact_type_locale_model import (
         CompanyContactTypeLocaleModel,
     )
     from ...clients.groups.group_right_locale_model import (
         GroupRightLocaleModel,
     )
-    from ...clients.services.service_locale_model import ServiceLocaleModel
+    from ...nomenclatures.nomenclature_locale_model import (
+        NomenclatureLocaleModel,
+    )
+    from ...nomenclatures.categories.nomenclature_category_locale_model import (
+        NomenclatureCategoryLocaleModel,
+    )
     from ...containers.reports.container_report_type_locale_model import (
         ContainerReportTypeLocaleModel,
     )
@@ -31,16 +39,34 @@ if TYPE_CHECKING:
     from ..banks.bank_locale_model import BankLocaleModel
     from .text_locale_model import TextLocaleModel
     from ...clients.user_locale_model import UserLocaleModel
+    from ..settings_model import SettingsModel
 
 
 class LocaleModel(Timestamped, Base):
-    alpha_2: Final[Column[str]] = Column(
-        'Alpha2',
+    language_code: Final[Column[str]] = Column(
+        'LanguageCode',
         CaseInsensitiveUnicode(2),
+        CheckConstraint('"LanguageCode" <> \'\''),
         primary_key=True,
-        key='alpha_2',
+        key='language_code',
+    )
+    country_code: Final[Column[str]] = Column(
+        'CountryCode',
+        CaseInsensitiveUnicode(2),
+        CheckConstraint('"CountryCode" <> \'\''),
+        primary_key=True,
+        key='country_code',
     )
 
+    settings: Final[
+        'RelationshipProperty[Optional[SettingsModel]]'
+    ] = relationship(
+        'SettingsModel',
+        back_populates='fallback_locale',
+        lazy='noload',
+        cascade='save-update',
+        uselist=False,
+    )
     address_locales: Final[
         'RelationshipProperty[list[AddressLocaleModel]]'
     ] = relationship(
@@ -63,6 +89,15 @@ class LocaleModel(Timestamped, Base):
         'RelationshipProperty[list[BonusLocaleModel]]'
     ] = relationship(
         'BonusLocaleModel',
+        back_populates='locale',
+        lazy='noload',
+        cascade='save-update, merge, expunge, delete, delete-orphan',
+        uselist=True,
+    )
+    bonus_category_locales: Final[
+        'RelationshipProperty[list[BonusCategoryLocaleModel]]'
+    ] = relationship(
+        'BonusCategoryLocaleModel',
         back_populates='locale',
         lazy='noload',
         cascade='save-update, merge, expunge, delete, delete-orphan',
@@ -122,19 +157,28 @@ class LocaleModel(Timestamped, Base):
         cascade='save-update, merge, expunge, delete, delete-orphan',
         uselist=True,
     )
-    service_locales: Final[
-        'RelationshipProperty[list[ServiceLocaleModel]]'
+    text_locales: Final[
+        'RelationshipProperty[list[TextLocaleModel]]'
     ] = relationship(
-        'ServiceLocaleModel',
+        'TextLocaleModel',
         back_populates='locale',
         lazy='noload',
         cascade='save-update, merge, expunge, delete, delete-orphan',
         uselist=True,
     )
-    text_locales: Final[
-        'RelationshipProperty[list[TextLocaleModel]]'
+    nomenclature_category_locales: Final[
+        'RelationshipProperty[list[NomenclatureCategoryLocaleModel]]'
     ] = relationship(
-        'TextLocaleModel',
+        'NomenclatureCategoryLocaleModel',
+        back_populates='locale',
+        lazy='noload',
+        cascade='save-update, merge, expunge, delete, delete-orphan',
+        uselist=True,
+    )
+    nomenclature_locales: Final[
+        'RelationshipProperty[list[NomenclatureLocaleModel]]'
+    ] = relationship(
+        'NomenclatureLocaleModel',
         back_populates='locale',
         lazy='noload',
         cascade='save-update, merge, expunge, delete, delete-orphan',

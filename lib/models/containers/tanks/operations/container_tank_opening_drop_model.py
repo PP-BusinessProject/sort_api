@@ -1,9 +1,10 @@
+from decimal import Decimal
 from typing import Final
 
 from sqlalchemy.orm import relationship
 from sqlalchemy.orm.relationships import RelationshipProperty
 from sqlalchemy.sql.schema import Column, ForeignKey
-from sqlalchemy.sql.sqltypes import Integer
+from sqlalchemy.sql.sqltypes import Integer, Numeric
 
 from ...._mixins import Timestamped
 from ....base_interface import Base
@@ -19,12 +20,19 @@ class ContainerTankOpeningDropModel(Timestamped, Base):
             onupdate='CASCADE',
             ondelete='CASCADE',
         ),
-        primary_key=True,
+        nullable=False,
         key='opening_id',
     )
-    volume: Final[Column[int]] = Column(
-        'Volume',
+    id: Final[Column[int]] = Column(
+        'Id',
         Integer,
+        primary_key=True,
+        autoincrement=True,
+        key='id',
+    )
+    volume: Final[Column[Decimal]] = Column(
+        'Volume',
+        Numeric(6, 6),
         nullable=False,
         key='volume',
     )

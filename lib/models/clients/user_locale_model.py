@@ -1,11 +1,17 @@
-from typing import Final, Iterable, Type
+from typing import Any, Dict, Final, Iterable, Tuple, Type, Union
 
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import relationship
 from sqlalchemy.orm.relationships import RelationshipProperty
 from sqlalchemy.sql.elements import ClauseElement
 from sqlalchemy.sql.functions import func
-from sqlalchemy.sql.schema import CheckConstraint, Column, ForeignKey
+from sqlalchemy.sql.schema import (
+    CheckConstraint,
+    Column,
+    ForeignKey,
+    ForeignKeyConstraint,
+    SchemaItem,
+)
 from sqlalchemy.sql.sqltypes import String
 from typing_extensions import Self
 
@@ -23,16 +29,17 @@ class UserLocaleModel(Timestamped, Base):
         primary_key=True,
         key='user_id',
     )
-    locale_alpha_2: Final[Column[str]] = Column(
-        'LocaleAlpha2',
-        LocaleModel.alpha_2.type,
-        ForeignKey(
-            LocaleModel.alpha_2,
-            onupdate='CASCADE',
-            ondelete='RESTRICT',
-        ),
+    locale_language_code: Final[Column[str]] = Column(
+        'LocaleLanguageCode',
+        LocaleModel.language_code.type,
         primary_key=True,
-        key='locale_alpha_2',
+        key='locale_language_code',
+    )
+    locale_country_code: Final[Column[str]] = Column(
+        'LocaleCountryCode',
+        LocaleModel.country_code.type,
+        primary_key=True,
+        key='locale_country_code',
     )
 
     first_name: Final[Column[str]] = Column(
@@ -91,3 +98,12 @@ class UserLocaleModel(Timestamped, Base):
             raise ValueError('value is empty.')
         first_name, last_name, *_ = value.split(' ', 1), ''
         return [(cls.first_name, first_name), (cls.last_name, last_name)]
+
+    __table_args__: Final[Tuple[Union[SchemaItem, Dict[str, Any]]]] = (
+        ForeignKeyConstraint(
+            [locale_language_code, locale_country_code],
+            [LocaleModel.language_code, LocaleModel.country_code],
+            onupdate='CASCADE',
+            ondelete='RESTRICT',
+        ),
+    )

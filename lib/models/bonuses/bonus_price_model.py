@@ -29,7 +29,7 @@ class BonusPriceModel(Timestamped, Base):
     )
     value: Final[Column[Decimal]] = Column(
         'Value',
-        Numeric,
+        Numeric(8, 2),
         CheckConstraint('"Value" >= 0'),
         nullable=False,
         key='value',

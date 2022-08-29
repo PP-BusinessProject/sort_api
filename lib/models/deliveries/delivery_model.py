@@ -13,7 +13,7 @@ from ..clients.user_model import UserModel
 from ..misc.addresses.address_model import AddressModel
 
 if TYPE_CHECKING:
-    from .delivery_service_model import DeliveryServiceModel
+    from .delivery_nomenclature_model import DeliveryNomenclatureModel
 
 
 class DeliveryModel(Timestamped, Base):
@@ -74,10 +74,10 @@ class DeliveryModel(Timestamped, Base):
         cascade='save-update',
         uselist=False,
     )
-    services: Final[
-        'RelationshipProperty[list[DeliveryServiceModel]]'
+    nomenclatures: Final[
+        'RelationshipProperty[list[DeliveryNomenclatureModel]]'
     ] = relationship(
-        'DeliveryServiceModel',
+        'DeliveryNomenclatureModel',
         back_populates='delivery',
         lazy='noload',
         cascade='save-update, merge, expunge, delete, delete-orphan',

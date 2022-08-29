@@ -27,6 +27,7 @@ from .callbacks.create_visual_schema import create_visual_schema
 from .methods._exception_handlers import sqlalchemy_error_handler
 from .methods.endpoint import endpoint
 from .methods.schema import schema
+from .methods.test_database import test_database
 from .middleware.add_to_scope_middleware import AddToScopeMiddleware
 from .middleware.async_sqlalchemy_middleware import AsyncSQLAlchemyMiddleware
 from .models.base_interface import Base, serialize
@@ -101,6 +102,7 @@ app = FastAPI(
     ),
     routes=[
         Route('/', schema),
+        Route('/settings/test', test_database),
         Route(
             '/settings/time',
             lambda request: Response(datetime.now(tzlocal()).isoformat()),

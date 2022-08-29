@@ -16,7 +16,9 @@ from typing_extensions import Self
 
 from ...._mixins import Timestamped
 from ....base_interface import Base
-from ....clients.deals.deal_service_model import DealServiceModel
+from ....clients.deals.deal_addition_nomenclature_model import (
+    DealAdditionNomenclatureModel,
+)
 from ....clients.user_model import UserModel
 from ..container_tank_model import ContainerTankModel
 
@@ -46,17 +48,17 @@ class ContainerTankOpeningModel(Timestamped, Base):
         nullable=False,
         key='tank_type_id',
     )
-    deal_id: Final[Column[int]] = Column(
-        'DealId',
-        DealServiceModel.deal_id.type,
+    addition_id: Final[Column[int]] = Column(
+        'AdditionId',
+        DealAdditionNomenclatureModel.addition_id.type,
         nullable=False,
-        key='deal_id',
+        key='addition_id',
     )
-    service_id: Final[Column[int]] = Column(
-        'ServiceId',
-        DealServiceModel.service_id.type,
+    nomenclature_id: Final[Column[int]] = Column(
+        'NomenclatureId',
+        DealAdditionNomenclatureModel.nomenclature_id.type,
         nullable=False,
-        key='service_id',
+        key='nomenclature_id',
     )
 
     id: Final[Column[int]] = Column(
@@ -91,10 +93,10 @@ class ContainerTankOpeningModel(Timestamped, Base):
         cascade='save-update',
         uselist=False,
     )
-    deal_service: Final[
-        'RelationshipProperty[DealServiceModel]'
+    nomenclature: Final[
+        'RelationshipProperty[DealAdditionNomenclatureModel]'
     ] = relationship(
-        'DealServiceModel',
+        'DealAdditionNomenclatureModel',
         back_populates='openings',
         lazy='noload',
         cascade='save-update',
@@ -118,8 +120,11 @@ class ContainerTankOpeningModel(Timestamped, Base):
             ondelete='NO ACTION',
         ),
         ForeignKeyConstraint(
-            [deal_id, service_id],
-            [DealServiceModel.deal_id, DealServiceModel.service_id],
+            [addition_id, nomenclature_id],
+            [
+                DealAdditionNomenclatureModel.addition_id,
+                DealAdditionNomenclatureModel.nomenclature_id,
+            ],
             onupdate='CASCADE',
             ondelete='NO ACTION',
         ),

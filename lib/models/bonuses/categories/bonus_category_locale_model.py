@@ -13,17 +13,19 @@ from sqlalchemy.sql.sqltypes import String
 
 from ..._mixins import Timestamped
 from ...base_interface import Base
-from ..locales.locale_model import LocaleModel
-from .price_model import PriceModel
+from ...misc.locales.locale_model import LocaleModel
+from .bonus_category_model import BonusCategoryModel
 
 
-class PriceLocaleModel(Timestamped, Base):
-    price_id: Final[Column[str]] = Column(
-        'PriceId',
-        PriceModel.id.type,
-        ForeignKey(PriceModel.id, onupdate='CASCADE', ondelete='CASCADE'),
+class BonusCategoryLocaleModel(Timestamped, Base):
+    category_id: Final[Column[str]] = Column(
+        'CategoryId',
+        BonusCategoryModel.id.type,
+        ForeignKey(
+            BonusCategoryModel.id, onupdate='CASCADE', ondelete='CASCADE'
+        ),
         primary_key=True,
-        key='price_id',
+        key='category_id',
     )
     locale_language_code: Final[Column[str]] = Column(
         'LocaleLanguageCode',
@@ -48,13 +50,13 @@ class PriceLocaleModel(Timestamped, Base):
 
     locale: Final['RelationshipProperty[LocaleModel]'] = relationship(
         'LocaleModel',
-        back_populates='price_locales',
+        back_populates='bonus_category_locales',
         lazy='noload',
         cascade='save-update',
         uselist=False,
     )
-    price: Final['RelationshipProperty[PriceModel]'] = relationship(
-        'PriceModel',
+    category: Final['RelationshipProperty[BonusCategoryModel]'] = relationship(
+        'BonusCategoryModel',
         back_populates='locales',
         lazy='noload',
         cascade='save-update',

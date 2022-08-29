@@ -10,8 +10,11 @@ from ...base_interface import Base
 
 if TYPE_CHECKING:
     from ...bonuses.bonus_price_model import BonusPriceModel
-    from ...clients.services.service_price_model import ServicePriceModel
     from ...clients.deals.deal_model import DealModel
+    from ...nomenclatures.nomenclature_price_model import (
+        NomenclaturePriceModel,
+    )
+    from ...clients.deals.deal_addition_model import DealAdditionModel
     from .price_locale_model import PriceLocaleModel
 
 
@@ -42,6 +45,15 @@ class PriceModel(Timestamped, Base):
     )
     deals: Final['RelationshipProperty[list[DealModel]]'] = relationship(
         'DealModel',
+        back_populates='fallback_price',
+        lazy='noload',
+        cascade='save-update, merge, expunge, delete, delete-orphan',
+        uselist=True,
+    )
+    deal_additions: Final[
+        'RelationshipProperty[list[DealAdditionModel]]'
+    ] = relationship(
+        'DealAdditionModel',
         back_populates='price',
         lazy='noload',
         cascade='save-update, merge, expunge, delete, delete-orphan',
@@ -56,10 +68,10 @@ class PriceModel(Timestamped, Base):
         cascade='save-update, merge, expunge, delete, delete-orphan',
         uselist=True,
     )
-    services: Final[
-        'RelationshipProperty[list[ServicePriceModel]]'
+    nomenclatures: Final[
+        'RelationshipProperty[list[NomenclaturePriceModel]]'
     ] = relationship(
-        'ServicePriceModel',
+        'NomenclaturePriceModel',
         back_populates='price',
         lazy='noload',
         cascade='save-update, merge, expunge, delete, delete-orphan',
