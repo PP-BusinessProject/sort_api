@@ -2,7 +2,7 @@ from ast import operator
 from dataclasses import dataclass
 from logging import Logger
 from types import TracebackType
-from typing import Final, Optional, Tuple, Type, Union
+from typing import Final, Iterable, Optional, Tuple, Type, Union
 
 from sqlalchemy.engine.base import Connection, Engine
 from sqlalchemy.ext.asyncio.engine import AsyncConnection, AsyncEngine
@@ -15,7 +15,7 @@ from sqlalchemy.sql.schema import MetaData
 from starlette.responses import Response
 from starlette.types import ASGIApp, Receive, Scope, Send
 from typing_extensions import Self
-
+from sqlalchemy.orm.relationships import RelationshipProperty
 from ..utils.anyfunction import anycorofunction
 
 SerializedValue = Union[str, int, float]

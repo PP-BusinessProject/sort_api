@@ -5,8 +5,6 @@ inflect==6.0.0
 orjson==3.7.12
 python-dateutil==2.8.2
 sqlalchemy==1.4.39
-sse-starlette==1.1.6
 starlette_authlib==0.1.12
-timing-asgi==0.2.1
 typing_extensions==4.3.0
 uvicorn==0.18.2
