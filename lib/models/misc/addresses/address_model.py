@@ -7,7 +7,7 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.orm.relationships import RelationshipProperty
 from sqlalchemy.sql.elements import ClauseElement
 from sqlalchemy.sql.schema import CheckConstraint, Column
-from sqlalchemy.sql.sqltypes import Integer, String, SmallInteger
+from sqlalchemy.sql.sqltypes import Integer, SmallInteger, String
 from typing_extensions import Self
 
 from ...base_interface import Base
@@ -34,28 +34,28 @@ class AddressModel(Base):
         CheckConstraint('"FallbackСountry" <> \'\''),
         nullable=False,
         default='Ukraine',
-        key='country',
+        key='fallback_country',
     )
     fallback_state: Final[Column[str]] = Column(
         'FallbackState',
         String(255),
         CheckConstraint('"FallbackState" <> \'\''),
         nullable=False,
-        key='state',
+        key='fallback_state',
     )
     fallback_city: Final[Column[str]] = Column(
         'FallbackCity',
         String(255),
         CheckConstraint('"FallbackCity" <> \'\''),
         nullable=False,
-        key='city',
+        key='fallback_city',
     )
     fallback_street: Final[Column[str]] = Column(
         'FallbackStreet',
         String(255),
         CheckConstraint('"FallbackStreet" <> \'\''),
         nullable=False,
-        key='street',
+        key='fallback_street',
     )
     building: Final[Column[int]] = Column(
         'Building',

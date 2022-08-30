@@ -41,9 +41,8 @@ class ContainerReportModel(Timestamped, Base):
         ForeignKey(
             ContainerReportTypeModel.id,
             onupdate='CASCADE',
-            ondelete='CASCADE',
+            ondelete='RESTRICT',
         ),
-        nullable=False,
         key='type_id',
     )
     information: Final[Column[str]] = Column(
