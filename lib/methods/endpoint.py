@@ -1,6 +1,7 @@
 from ast import operator
 from contextlib import suppress
 from datetime import date, datetime, time, timedelta
+from decimal import Decimal
 from operator import eq, ge, gt, le, lt, ne
 from types import MappingProxyType
 from typing import Any, Final, Iterable, List, Optional, Tuple, Type, Union
@@ -201,7 +202,7 @@ async def endpoint(request: Request, /) -> Response:
                         if value not in {'true', 'false'}:
                             raise ValueError
                         value = value == 'true'
-                    elif issubclass(type, (int, float)):
+                    elif issubclass(type, (int, float, Decimal)):
                         value = type(value)
                     elif issubclass(type, timedelta):
                         value = timedelta(seconds=float(value))
