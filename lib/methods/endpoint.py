@@ -385,7 +385,6 @@ async def endpoint(request: Request, /) -> Response:
         statement = select(model or table)
         for chain, field, values in get_filters():
             if values:
-                statement = statement.join(link := next(chain := iter(chain)))
                 for link in chain:
                     statement = statement.join(link)
                 statement = statement.where(
