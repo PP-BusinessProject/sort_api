@@ -439,8 +439,8 @@ async def endpoint(request: Request, /) -> Response:
             nonlocal Session, statement
             if model is None:
                 result = await Session.execute(statement)
-                return list(map(list, result.all()))
-            return (await Session.scalars(statement)).all()
+                return list(map(list, result.unique().all()))
+            return (await Session.scalars(statement)).unique().all()
 
         try:
             return response(await get_response())
