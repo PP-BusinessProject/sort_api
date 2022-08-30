@@ -384,10 +384,13 @@ async def endpoint(request: Request, /) -> Response:
 
     else:
         statement = select(model or table)
+        joined_links: set[RelationshipProperty] = set()
         for chain, field, values in get_filters():
             if values:
                 for link in chain:
-                    statement = statement.join(link)
+                    if link not in joined_links:
+                        joined_links.add(link)
+                        statement = statement.join(link)
                 statement = statement.where(
                     or_(
                         *(
