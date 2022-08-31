@@ -510,10 +510,9 @@ class EndPointStatementBuilder(object):
         Tuple[str, Optional[str]], Tuple[Optional[str], Optional[operator]]
     ]:
         for op_key, op in cls.OperatorDict.items():
-            for _ in ('=', ''):
-                name, separator, value = entity.partition(_ + op_key)
-                if separator:
-                    return (name, value), (op_key, op)
+            name, separator, value = entity.partition(op_key)
+            if separator:
+                return (name, value), (op_key, op)
         return (entity, None), (None, None)
 
     @staticmethod
