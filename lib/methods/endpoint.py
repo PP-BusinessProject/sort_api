@@ -340,7 +340,7 @@ class EndPointStatementBuilder(object):
         MappingProxyType[str, Optional[operator]]
     ] = MappingProxyType(
         {'@@': None, '@>': None}
-        | {'>=': ge, '<=': le, '>': gt, '<': lt, '!=': ne, '=': eq}
+        | {'>=': ge, '<=': le, '!=': ne, '=': eq, '>': gt, '<': lt}
     )
 
     @classmethod
