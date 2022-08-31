@@ -1,8 +1,7 @@
-from ast import operator
 from dataclasses import dataclass
 from logging import Logger
 from types import TracebackType
-from typing import Final, Iterable, Optional, Tuple, Type, Union
+from typing import TYPE_CHECKING, Any, Final, Optional, Type, Union
 
 from sqlalchemy.engine.base import Connection, Engine
 from sqlalchemy.ext.asyncio.engine import AsyncConnection, AsyncEngine
@@ -15,11 +14,8 @@ from sqlalchemy.sql.schema import MetaData
 from starlette.responses import Response
 from starlette.types import ASGIApp, Receive, Scope, Send
 from typing_extensions import Self
-from sqlalchemy.orm.relationships import RelationshipProperty
-from ..utils.anyfunction import anycorofunction
 
-SerializedValue = Union[str, int, float]
-ColumnFilter = Tuple[SerializedValue, Union[str, operator]]
+from ..utils.anyfunction import anycorofunction
 
 
 @dataclass(init=False, frozen=True)
@@ -33,6 +29,11 @@ class AsyncSQLAlchemyMiddleware(object):
     ]
     metadata: Final[MetaData]
 
+    if TYPE_CHECKING:
+        from sqlalchemy.orm.decl_api import _DeclarativeBase
+
+        Base: Final[Type[_DeclarativeBase]]
+
     def __init__(
         self: Self,
         /,
@@ -44,9 +45,15 @@ class AsyncSQLAlchemyMiddleware(object):
             AsyncConnection,
             AsyncEngine,
         ],
-        metadata: MetaData,
+        metadata: Union[MetaData, Any],
     ) -> None:
-        if not isinstance(metadata, MetaData):
+        if isinstance(metadata, MetaData):
+            object.__setattr__(self, 'metadata', metadata)
+            object.__setattr__(self, 'Base', None)
+        elif hasattr(metadata, 'metadata'):
+            object.__setattr__(self, 'metadata', metadata.metadata)
+            object.__setattr__(self, 'Base', metadata)
+        else:
             raise ValueError(f'Invalid metadata: {metadata}')
 
         Session = None
@@ -70,7 +77,6 @@ class AsyncSQLAlchemyMiddleware(object):
         object.__setattr__(self, 'app', app)
         object.__setattr__(self, 'engine', bind)
         object.__setattr__(self, 'Session', Session)
-        object.__setattr__(self, 'metadata', metadata)
 
     async def start(self: Self, /) -> Self:
         if self.metadata.is_bound():
@@ -126,4 +132,5 @@ class AsyncSQLAlchemyMiddleware(object):
             scope['engine'] = self.engine
             scope['Session'] = self.Session
             scope['metadata'] = self.metadata
+            scope['Base'] = self.Base
             return await self.app(scope, receive, send)

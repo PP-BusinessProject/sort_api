@@ -1,9 +1,10 @@
 from asyncio import current_task
 from datetime import datetime
-from logging import Logger, basicConfig
+from logging import Filter, Logger, LogRecord, basicConfig, getLogger
 from os import environ
 from pathlib import Path
 from typing import Any, Final
+from urllib.parse import unquote, urlparse
 
 from dateutil.tz.tz import tzlocal
 from fastapi.applications import FastAPI
@@ -40,13 +41,22 @@ class _DefaultORJSONResponse(JSONResponse):
         return dumps(content, default=serialize)
 
 
+class _EndpointFilter(Filter):
+    def filter(self: Self, record: LogRecord, /) -> bool:
+        record.args = list(record.args)
+        record.args[2] = unquote(record.args[2].replace('+', ' '))
+        record.args = tuple(record.args)
+        return True
+
+
 # print(*(_ for _ in Base.metadata.tables if not _.startswith('_')), sep='\n')
 basicConfig(level=environ.get('LOGGING', 'INFO'))
+getLogger('uvicorn.access').addFilter(_EndpointFilter())
 schema_path: Final[Path] = Path('./lib/schema.png').resolve()
 sqlalchemy: Final = async_scoped_session(
     sessionmaker(
         create_async_engine(
-            echo=environ.get('LOGGING', '').upper() == 'DEBUG',
+            echo=True,  # environ.get('LOGGING', '').upper() == 'DEBUG',
             url='postgresql+asyncpg://'
             + environ.get(
                 'DATABASE_URL',
@@ -94,11 +104,7 @@ app = FastAPI(
             if 'DATABASE_URL' in environ
             else ()
         ),
-        Middleware(
-            AsyncSQLAlchemyMiddleware,
-            metadata=Base.metadata,
-            bind=sqlalchemy,
-        ),
+        Middleware(AsyncSQLAlchemyMiddleware, metadata=Base, bind=sqlalchemy),
     ),
     routes=[
         Route('/', schema),
@@ -107,15 +113,15 @@ app = FastAPI(
             '/settings/time',
             lambda request: Response(datetime.now(tzlocal()).isoformat()),
         ),
-        Route(
-            '/{route}',
-            endpoint,
-            methods=['GET', 'POST', 'PUT', 'DELETE'],
-        ),
-        Route(
-            '/{route}/{option}',
-            endpoint,
-            methods=['GET', 'POST', 'PUT', 'DELETE'],
+        *(
+            Route(
+                '/'.join(
+                    ('/{route}', *('{option%s}' % (i + 1) for i in range(i)))
+                ),
+                endpoint,
+                methods=['GET', 'POST', 'PUT', 'DELETE'],
+            )
+            for i in range(4)
         ),
     ],
 )
