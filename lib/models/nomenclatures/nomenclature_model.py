@@ -23,28 +23,21 @@ if TYPE_CHECKING:
 
 class NomenclatureModel(Base):
     id: Final[Column[int]] = Column(
-        'Id',
         Integer,
         primary_key=True,
         autoincrement=True,
-        key='id',
     )
     fallback_name: Final[Column[str]] = Column(
-        'FallbackName',
         String(255),
-        CheckConstraint('"FallbackName" <> \'\''),
+        CheckConstraint("fallback_name <> ''"),
         nullable=False,
-        key='fallback_name',
     )
     fallback_description: Final[Column[str]] = Column(
-        'FallbackDescription',
         String(1023),
         nullable=False,
         default='',
-        key='fallback_description',
     )
     category_id: Final[Column[int]] = Column(
-        'CategoryId',
         NomenclatureCategoryModel.id.type,
         ForeignKey(
             NomenclatureCategoryModel.id,
@@ -52,10 +45,8 @@ class NomenclatureModel(Base):
             ondelete='RESTRICT',
         ),
         nullable=False,
-        key='category_id',
     )
     measurement_id: Final[Column[int]] = Column(
-        'MeasurementId',
         MeasurementModel.id.type,
         ForeignKey(
             MeasurementModel.id,
@@ -63,7 +54,6 @@ class NomenclatureModel(Base):
             ondelete='RESTRICT',
         ),
         nullable=False,
-        key='measurement_id',
     )
 
     locales: Final[

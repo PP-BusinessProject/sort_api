@@ -25,38 +25,28 @@ if TYPE_CHECKING:
 class DealModel(Timestamped, Base):
 
     user_id: Final[Column[int]] = Column(
-        'UserId',
         UserModel.id.type,
         ForeignKey(UserModel.id, onupdate='CASCADE', ondelete='CASCADE'),
         nullable=False,
-        key='user_id',
     )
     id: Final[Column[int]] = Column(
-        'Id',
         Integer,
         primary_key=True,
         autoincrement=True,
-        key='id',
     )
     fallback_price_id: Final[Column[int]] = Column(
-        'FallbackPriceId',
         PriceModel.id.type,
         ForeignKey(PriceModel.id, onupdate='CASCADE', ondelete='RESTRICT'),
         nullable=False,
-        key='fallback_price_id',
     )
     fallback_payment_type: Final[Column[bool]] = Column(
-        'FallbackPaymentType',
         Boolean(create_constraint=True),
         nullable=False,
         default=False,
-        key='fallback_payment_type',
         doc='Prepayment (False) or Payment (True).',
     )
     active_till: Final[Column[Optional[datetime]]] = Column(
-        'ActiveTill',
         DateTime(timezone=True),
-        key='active_till',
     )
 
     @hybrid_property

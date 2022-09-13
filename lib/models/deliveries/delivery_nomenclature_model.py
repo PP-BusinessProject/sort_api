@@ -14,14 +14,11 @@ from .delivery_model import DeliveryModel
 
 class DeliveryNomenclatureModel(Timestamped, Base):
     delivery_id: Final[Column[int]] = Column(
-        'UserId',
         DeliveryModel.id.type,
         ForeignKey(DeliveryModel.id, onupdate='CASCADE', ondelete='CASCADE'),
         primary_key=True,
-        key='user_id',
     )
     nomenclature_id: Final[Column[int]] = Column(
-        'NomenclatureId',
         NomenclatureModel.id.type,
         ForeignKey(
             NomenclatureModel.id,
@@ -29,15 +26,12 @@ class DeliveryNomenclatureModel(Timestamped, Base):
             ondelete='RESTRICT',
         ),
         primary_key=True,
-        key='nomenclature_id',
     )
     amount: Final[Column[Decimal]] = Column(
-        'Amount',
         Numeric,
-        CheckConstraint('"Amount" > 0'),
+        CheckConstraint('amount > 0'),
         nullable=False,
         default=1,
-        key='amount',
     )
 
     delivery: Final[

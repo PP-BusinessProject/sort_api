@@ -30,43 +30,31 @@ if TYPE_CHECKING:
 
 class ContainerTankOpeningModel(Timestamped, Base):
     user_id: Final[Column[int]] = Column(
-        'UserId',
         UserModel.id.type,
         ForeignKey(UserModel.id, onupdate='CASCADE', ondelete='NO ACTION'),
         nullable=False,
-        key='user_id',
     )
     container_id: Final[Column[int]] = Column(
-        'ContainerId',
         ContainerTankModel.container_id.type,
         nullable=False,
-        key='container_id',
     )
     tank_type_id: Final[Column[int]] = Column(
-        'TankTypeId',
         ContainerTankModel.type_id.type,
         nullable=False,
-        key='tank_type_id',
     )
     addition_id: Final[Column[int]] = Column(
-        'AdditionId',
         DealAdditionNomenclatureModel.addition_id.type,
         nullable=False,
-        key='addition_id',
     )
     nomenclature_id: Final[Column[int]] = Column(
-        'NomenclatureId',
         DealAdditionNomenclatureModel.nomenclature_id.type,
         nullable=False,
-        key='nomenclature_id',
     )
 
     id: Final[Column[int]] = Column(
-        'Id',
         Integer,
         primary_key=True,
         autoincrement=True,
-        key='id',
     )
 
     @hybrid_property

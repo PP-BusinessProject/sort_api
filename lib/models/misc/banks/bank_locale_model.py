@@ -19,31 +19,23 @@ from .bank_model import BankModel
 
 class BankLocaleModel(Timestamped, Base):
     bank_code: Final[Column[str]] = Column(
-        'BankCode',
         BankModel.code.type,
         ForeignKey(BankModel.code, onupdate='CASCADE', ondelete='CASCADE'),
         primary_key=True,
-        key='bank_code',
     )
     locale_language_code: Final[Column[str]] = Column(
-        'LocaleLanguageCode',
         LocaleModel.language_code.type,
         primary_key=True,
-        key='locale_language_code',
     )
     locale_country_code: Final[Column[str]] = Column(
-        'LocaleCountryCode',
         LocaleModel.country_code.type,
         primary_key=True,
-        key='locale_country_code',
     )
 
     name: Final[Column[str]] = Column(
-        'Name',
         String(255),
-        CheckConstraint('"Name" <> \'\''),
+        CheckConstraint("name <> ''"),
         nullable=False,
-        key='name',
     )
 
     locale: Final['RelationshipProperty[LocaleModel]'] = relationship(

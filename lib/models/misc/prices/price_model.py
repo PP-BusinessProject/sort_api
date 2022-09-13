@@ -20,18 +20,14 @@ if TYPE_CHECKING:
 
 class PriceModel(Timestamped, Base):
     id: Final[Column[int]] = Column(
-        'Id',
         Integer,
         primary_key=True,
         autoincrement=True,
-        key='id',
     )
     fallback_name: Final[Column[str]] = Column(
-        'FallbackName',
         String(255),
-        CheckConstraint('"FallbackName" <> \'\''),
+        CheckConstraint("fallback_name <> ''"),
         nullable=False,
-        key='fallback_name',
     )
 
     locales: Final[

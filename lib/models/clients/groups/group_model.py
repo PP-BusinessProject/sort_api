@@ -33,18 +33,14 @@ class GroupModel(Timestamped, Base):
     """
 
     owner_id: Final[Column[int]] = Column(
-        'OwnerId',
         UserModel.id.type,
         ForeignKey(UserModel.id, onupdate='CASCADE', ondelete='CASCADE'),
         primary_key=True,
-        key='owner_id',
     )
     name: Final[Column[str]] = Column(
-        'Name',
         String(64),
         nullable=False,
         default='',
-        key='name',
     )
 
     owner: Final['RelationshipProperty[UserModel]'] = relationship(

@@ -14,7 +14,6 @@ from .nomenclature_model import NomenclatureModel
 
 class NomenclaturePriceModel(Timestamped, Base):
     nomenclature_id: Final[Column[int]] = Column(
-        'NomenclatureId',
         NomenclatureModel.id.type,
         ForeignKey(
             NomenclatureModel.id,
@@ -22,21 +21,16 @@ class NomenclaturePriceModel(Timestamped, Base):
             ondelete='CASCADE',
         ),
         primary_key=True,
-        key='nomenclature_id',
     )
     price_id: Final[Column[int]] = Column(
-        'PriceId',
         PriceModel.id.type,
         ForeignKey(PriceModel.id, onupdate='CASCADE', ondelete='RESTRICT'),
         primary_key=True,
-        key='price_id',
     )
     value: Final[Column[Decimal]] = Column(
-        'Value',
         Numeric(8, 2),
-        CheckConstraint('"Value" >= 0'),
+        CheckConstraint('value >= 0'),
         nullable=False,
-        key='value',
     )
 
     nomenclature: Final[

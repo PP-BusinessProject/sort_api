@@ -18,35 +18,26 @@ if TYPE_CHECKING:
 
 class BonusCouponModel(Timestamped, Base):
     bonus_id: Final[Column[int]] = Column(
-        'BonusId',
         BonusModel.id.type,
         ForeignKey(BonusModel.id, onupdate='CASCADE', ondelete='RESTRICT'),
         nullable=False,
-        key='bonus_id',
     )
 
     id: Final[Column[int]] = Column(
-        'Id',
         Integer,
         primary_key=True,
         autoincrement=True,
-        key='id',
     )
     count: Final[Column[int]] = Column(
-        'Count',
         Integer,
-        CheckConstraint('"Count" > 0'),
+        CheckConstraint('count > 0'),
         nullable=False,
         default=1,
-        key='count',
     )
     active_till: Final[Column[Optional[datetime]]] = Column(
-        'ActiveTill',
         DateTime(timezone=True),
-        key='active_till',
     )
     owner_id: Final[Column[Optional[int]]] = Column(
-        'OwnerId',
         UserModel.id.type,
         ForeignKey(UserModel.id, onupdate='CASCADE', ondelete='SET NULL'),
         CheckConstraint(
@@ -56,7 +47,6 @@ class BonusCouponModel(Timestamped, Base):
                 literal_column('"OwnerId"') > literal_column('0'),
             )
         ),
-        key='owner_id',
     )
 
     bonus: Final['RelationshipProperty[BonusModel]'] = relationship(

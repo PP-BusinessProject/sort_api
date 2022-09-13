@@ -17,18 +17,14 @@ if TYPE_CHECKING:
 
 class ImageModel(Timestamped, Base):
     id: Final[Column[int]] = Column(
-        'Id',
         Integer,
         primary_key=True,
         autoincrement=True,
-        key='id',
     )
     url: Final[Column[str]] = Column(
-        'Url',
         String(2048),
-        CheckConstraint('"Url" <> \'\''),
+        CheckConstraint("url <> ''"),
         nullable=False,
-        key='url',
     )
 
     bonuses: Final[

@@ -9,26 +9,22 @@ from ..._mixins import Timestamped
 from ...base_interface import Base
 
 if TYPE_CHECKING:
-    from .container_report_model import ContainerReportModel
     from ..tanks.container_tank_type_locale_model import (
         ContainerReportTypeLocaleModel,
     )
+    from .container_report_model import ContainerReportModel
 
 
 class ContainerReportTypeModel(Timestamped, Base):
     id: Final[Column[int]] = Column(
-        'Id',
         Integer,
         primary_key=True,
         autoincrement=True,
-        key='id',
     )
     fallback_name: Final[Column[str]] = Column(
-        'FallbackName',
         String(255),
-        CheckConstraint('"FallbackName" <> \'\''),
+        CheckConstraint("fallback_name <> ''"),
         nullable=False,
-        key='fallback_name',
     )
 
     locales: Final[

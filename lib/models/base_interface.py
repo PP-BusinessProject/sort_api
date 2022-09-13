@@ -15,9 +15,7 @@ from typing import (
     Iterable,
     List,
     Type,
-    TypeVar,
     Union,
-    overload,
 )
 
 from inflect import engine
@@ -35,72 +33,6 @@ Serializable = Union[
     Union[None, bool, int, float, Decimal, str],
     Union[List['Serializable'], Dict[str, 'Serializable']],
 ]
-_Serializable = TypeVar('_Serializable', bound=Serializable, covariant=True)
-
-
-@overload
-def serialize(
-    value: _Serializable,
-    /,
-    *,
-    encoding: str = 'utf8',
-) -> _Serializable:
-    pass
-
-
-@overload
-def serialize(
-    value: Union[bytes, date, time, datetime],
-    /,
-    *,
-    encoding: str = 'utf8',
-) -> str:
-    pass
-
-
-@overload
-def serialize(
-    value: timedelta,
-    /,
-    *,
-    encoding: str = 'utf8',
-) -> float:
-    pass
-
-
-@overload
-def serialize(
-    value: BaseInterface,
-    /,
-    *,
-    encoding: str = 'utf8',
-) -> Dict[str, Serializable]:
-    pass
-
-
-@overload
-def serialize(
-    value: Dict[str, _Serializable],
-    /,
-    *,
-    encoding: str = 'utf8',
-) -> Dict[str, _Serializable]:
-    pass
-
-
-@overload
-def serialize(
-    value: Iterable[_Serializable],
-    /,
-    *,
-    encoding: str = 'utf8',
-) -> List[_Serializable]:
-    pass
-
-
-@overload
-def serialize(value: Any, /, *, encoding: str = 'utf8') -> Serializable:
-    pass
 
 
 def serialize(
@@ -161,8 +93,8 @@ class BaseInterface(object):
     @declared_attr
     def __tablename__(cls: Type[Self], /) -> str:  # noqa: N805
         words = findall(r'[A-Z][^A-Z]*', cls.__name__.removesuffix('Model'))
-        words.append(cls.inflect.plural(words.pop().lower()).capitalize())
-        return ''.join(words)
+        words.append(cls.inflect.plural(words.pop().lower()))
+        return '_'.join(word.lower() for word in words)
 
     @classmethod
     def from_other(cls: Type[Self], other: Any, /) -> Self:

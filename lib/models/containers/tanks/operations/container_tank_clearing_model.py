@@ -18,37 +18,27 @@ from ..container_tank_model import ContainerTankModel
 
 class ContainerTankClearingModel(Timestamped, Base):
     user_id: Final[Column[int]] = Column(
-        'UserId',
         UserModel.id.type,
         ForeignKey(UserModel.id, onupdate='CASCADE', ondelete='NO ACTION'),
         nullable=False,
-        key='user_id',
     )
     container_id: Final[Column[int]] = Column(
-        'ContainerId',
         ContainerTankModel.container_id.type,
         nullable=False,
-        key='container_id',
     )
     tank_type_id: Final[Column[int]] = Column(
-        'TankTypeId',
         ContainerTankModel.type_id.type,
         nullable=False,
-        key='tank_type_id',
     )
 
     id: Final[Column[int]] = Column(
-        'Id',
         Integer,
         primary_key=True,
         autoincrement=True,
-        key='id',
     )
     volume: Final[Column[int]] = Column(
-        'Volume',
         Integer,
         nullable=False,
-        key='volume',
     )
 
     user: Final['RelationshipProperty[UserModel]'] = relationship(

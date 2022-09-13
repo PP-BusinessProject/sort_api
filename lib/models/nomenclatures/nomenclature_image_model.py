@@ -12,7 +12,6 @@ from .nomenclature_model import NomenclatureModel
 
 class NomenclatureImageModel(Timestamped, Base):
     nomenclature_id: Final[Column[int]] = Column(
-        'NomenclatureId',
         NomenclatureModel.id.type,
         ForeignKey(
             NomenclatureModel.id,
@@ -20,14 +19,11 @@ class NomenclatureImageModel(Timestamped, Base):
             ondelete='CASCADE',
         ),
         primary_key=True,
-        key='nomenclature_id',
     )
     image_id: Final[Column[int]] = Column(
-        'ImageId',
         ImageModel.id.type,
         ForeignKey(ImageModel.id, onupdate='CASCADE', ondelete='CASCADE'),
         primary_key=True,
-        key='image_id',
     )
 
     nomenclature: Final[

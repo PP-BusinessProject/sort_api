@@ -12,18 +12,14 @@ from .bonus_model import BonusModel
 
 class BonusImageModel(Timestamped, Base):
     bonus_id: Final[Column[int]] = Column(
-        'BonusId',
         BonusModel.id.type,
         ForeignKey(BonusModel.id, onupdate='CASCADE', ondelete='CASCADE'),
         primary_key=True,
-        key='bonus_id',
     )
     image_id: Final[Column[int]] = Column(
-        'ImageId',
         ImageModel.id.type,
         ForeignKey(ImageModel.id, onupdate='CASCADE', ondelete='CASCADE'),
         primary_key=True,
-        key='image_id',
     )
 
     bonus: Final['RelationshipProperty[BonusModel]'] = relationship(

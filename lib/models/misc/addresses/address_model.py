@@ -22,52 +22,38 @@ if TYPE_CHECKING:
 
 class AddressModel(Base):
     id: Final[Column[int]] = Column(
-        'Id',
         Integer,
         primary_key=True,
         autoincrement=True,
-        key='id',
     )
     fallback_country: Final[Column[str]] = Column(
-        'FallbackСountry',
         String(255),
-        CheckConstraint('"FallbackСountry" <> \'\''),
+        CheckConstraint("fallback_country <> ''"),
         nullable=False,
         default='Ukraine',
-        key='fallback_country',
     )
     fallback_state: Final[Column[str]] = Column(
-        'FallbackState',
         String(255),
-        CheckConstraint('"FallbackState" <> \'\''),
+        CheckConstraint("fallback_state <> ''"),
         nullable=False,
-        key='fallback_state',
     )
     fallback_city: Final[Column[str]] = Column(
-        'FallbackCity',
         String(255),
-        CheckConstraint('"FallbackCity" <> \'\''),
+        CheckConstraint("fallback_city <> ''"),
         nullable=False,
-        key='fallback_city',
     )
     fallback_street: Final[Column[str]] = Column(
-        'FallbackStreet',
         String(255),
-        CheckConstraint('"FallbackStreet" <> \'\''),
+        CheckConstraint("fallback_street <> ''"),
         nullable=False,
-        key='fallback_street',
     )
     building: Final[Column[int]] = Column(
-        'Building',
         SmallInteger,
         nullable=False,
-        key='building',
     )
     postal_code: Final[Column[int]] = Column(
-        'PostalCode',
         Integer,
         nullable=False,
-        key='postal_code',
     )
 
     @hybrid_property

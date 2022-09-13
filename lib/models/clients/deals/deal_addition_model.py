@@ -20,32 +20,24 @@ if TYPE_CHECKING:
 class DealAdditionModel(Timestamped, Base):
 
     deal_id: Final[Column[int]] = Column(
-        'DealId',
         DealModel.id.type,
         ForeignKey(DealModel.id, onupdate='CASCADE', ondelete='CASCADE'),
         nullable=False,
-        key='deal_id',
     )
     id: Final[Column[int]] = Column(
-        'Id',
         Integer,
         primary_key=True,
         autoincrement=True,
-        key='id',
     )
     price_id: Final[Column[int]] = Column(
-        'PriceId',
         PriceModel.id.type,
         ForeignKey(PriceModel.id, onupdate='CASCADE', ondelete='RESTRICT'),
         nullable=False,
-        key='price_id',
     )
     payment_type: Final[Column[bool]] = Column(
-        'PaymentType',
         Boolean(create_constraint=True),
         nullable=False,
         default=False,
-        key='payment_type',
         doc='Prepayment (False) or Payment (True).',
     )
 

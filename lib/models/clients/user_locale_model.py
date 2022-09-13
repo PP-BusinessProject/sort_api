@@ -23,38 +23,28 @@ from .user_model import UserModel
 
 class UserLocaleModel(Timestamped, Base):
     user_id: Final[Column[int]] = Column(
-        'UserId',
         UserModel.id.type,
         ForeignKey(UserModel.id, onupdate='CASCADE', ondelete='CASCADE'),
         primary_key=True,
-        key='user_id',
     )
     locale_language_code: Final[Column[str]] = Column(
-        'LocaleLanguageCode',
         LocaleModel.language_code.type,
         primary_key=True,
-        key='locale_language_code',
     )
     locale_country_code: Final[Column[str]] = Column(
-        'LocaleCountryCode',
         LocaleModel.country_code.type,
         primary_key=True,
-        key='locale_country_code',
     )
 
     first_name: Final[Column[str]] = Column(
-        'FirstName',
         String(64),
-        CheckConstraint('"FirstName" <> \'\''),
+        CheckConstraint("first_name <> ''"),
         nullable=False,
-        key='first_name',
     )
     last_name: Final[Column[str]] = Column(
-        'LastName',
         String(64),
         nullable=False,
         default='',
-        key='last_name',
     )
 
     locale: Final['RelationshipProperty[LocaleModel]'] = relationship(

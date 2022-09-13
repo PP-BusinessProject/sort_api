@@ -17,42 +17,34 @@ class UserInterface(BaseInterface):
     @declared_attr
     def fallback_first_name(self: Self, /) -> Column[str]:
         return Column(
-            'FallbackFirstName',
             String(64),
-            CheckConstraint('"FallbackFirstName" <> \'\''),
+            CheckConstraint("fallback_first_name <> ''"),
             nullable=False,
-            key='fallback_first_name',
         )
 
     @declared_attr
     def fallback_last_name(self: Self, /) -> Column[str]:
         return Column(
-            'FallbackLastName',
             String(64),
             nullable=False,
             default='',
-            key='fallback_last_name',
         )
 
     @declared_attr
     def phone_number(self: Self, /) -> Column[int]:
         return Column(
-            'PhoneNumber',
             BigInteger,
             index=True,
             unique=True,
             nullable=False,
-            key='phone_number',
         )
 
     @declared_attr
     def email(self: Self, /) -> Column[Optional[str]]:
         return Column(
-            'Email',
             CaseInsensitiveUnicode,
             index=True,
             unique=True,
-            key='email',
         )
 
     @declared_attr

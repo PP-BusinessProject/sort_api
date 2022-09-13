@@ -19,23 +19,17 @@ class SettingsModel(Timestamped, Base):
     __tablename__: Final[str] = 'Settings'
 
     id: Final[Column[Literal[True]]] = Column(
-        'Id',
         Boolean(create_constraint=True),
-        CheckConstraint('"Id"'),
+        CheckConstraint('id'),
         primary_key=True,
         default=True,
-        key='id',
     )
 
     fallback_locale_language_code: Final[Column[Optional[str]]] = Column(
-        'FallbackLocaleLanguageCode',
         LocaleModel.language_code.type,
-        key='fallback_locale_language_code',
     )
     fallback_locale_country_code: Final[Column[Optional[str]]] = Column(
-        'FallbackLocaleCountryCode',
         LocaleModel.country_code.type,
-        key='fallback_locale_country_code',
     )
 
     fallback_locale: Final[

@@ -20,39 +20,29 @@ if TYPE_CHECKING:
 
 class ContainerModel(Timestamped, Base):
     owner_id: Final[Column[Optional[int]]] = Column(
-        'OwnerId',
         UserModel.id.type,
         ForeignKey(UserModel.id, onupdate='CASCADE', ondelete='SET NULL'),
         CheckConstraint(
             literal_column('"OwnerId"')
             >= literal_column(str(UserModel.COMPANY_ID))
         ),
-        key='owner_id',
     )
     id: Final[Column[int]] = Column(
-        'Id',
         SmallInteger,
         primary_key=True,
         autoincrement=True,
-        key='id',
     )
     latitude: Final[Column[Decimal]] = Column(
-        'Latitude',
         Numeric(8, 6),
         nullable=False,
-        key='latitude',
     )
     longtitude: Final[Column[Decimal]] = Column(
-        'Longtitude',
         Numeric(9, 6),
         nullable=False,
-        key='longtitude',
     )
     address_id: Final[Column[Optional[int]]] = Column(
-        'AddressId',
         AddressModel.id.type,
         ForeignKey(AddressModel.id, onupdate='CASCADE', ondelete='RESTRICT'),
-        key='address_id',
     )
 
     owner: Final['RelationshipProperty[UserModel]'] = relationship(

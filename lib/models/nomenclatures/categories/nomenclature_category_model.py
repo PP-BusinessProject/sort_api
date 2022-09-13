@@ -17,26 +17,20 @@ if TYPE_CHECKING:
 
 class NomenclatureCategoryModel(Base):
     id: Final[Column[int]] = Column(
-        'Id',
         Integer,
         primary_key=True,
         autoincrement=True,
-        key='id',
     )
     parent_id: Final[Column[Optional[int]]] = Column(
-        'ParentId',
         id.type,
         ForeignKey(id, onupdate='CASCADE', ondelete='CASCADE'),
-        CheckConstraint('"ParentId" <> "Id"'),
-        key='parent_id',
+        CheckConstraint('parent_id <> id'),
     )
 
     fallback_name: Final[Column[str]] = Column(
-        'FallbackName',
         String(255),
-        CheckConstraint('"FallbackName" <> \'\''),
+        CheckConstraint("fallback_name <> ''"),
         nullable=False,
-        key='fallback_name',
     )
 
     locales: Final[

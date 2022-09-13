@@ -15,24 +15,18 @@ if TYPE_CHECKING:
 
 class BankModel(Base):
     code: Final[Column[int]] = Column(
-        'Code',
         Integer,
         primary_key=True,
-        key='code',
     )
     fallback_name: Final[Column[str]] = Column(
-        'FallbackName',
         String(255),
-        CheckConstraint('"FallbackName" <> \'\''),
+        CheckConstraint("fallback_name <> ''"),
         nullable=False,
-        key='fallback_name',
     )
     address_id: Final[Column[AddressModel]] = Column(
-        'AddressId',
         AddressModel.id.type,
         ForeignKey(AddressModel.id, onupdate='CASCADE', ondelete='RESTRICT'),
         nullable=False,
-        key='address_id',
     )
 
     locales: Final[

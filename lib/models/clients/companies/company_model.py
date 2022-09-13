@@ -35,7 +35,6 @@ class CompanyModel(Base):
     """
 
     registry_number: Final[Column[int]] = Column(
-        'RegistryNumber',
         UserModel.id.type,
         ForeignKey(UserModel.id, onupdate='CASCADE', ondelete='CASCADE'),
         CheckConstraint(
@@ -43,40 +42,29 @@ class CompanyModel(Base):
             >= literal_column(str(UserModel.COMPANY_ID))
         ),
         primary_key=True,
-        key='registry_number',
     )
     tax_number: Final[Column[Optional[int]]] = Column(
-        'TaxNumber',
         Integer,
-        key='tax_number',
     )
     address_id: Final[Column[int]] = Column(
-        'AddressId',
         AddressModel.id.type,
         ForeignKey(AddressModel.id, onupdate='CASCADE', ondelete='RESTRICT'),
         nullable=False,
-        key='address_id',
     )
     real_address_id: Final[Column[Optional[int]]] = Column(
-        'RealAddressId',
         AddressModel.id.type,
         ForeignKey(AddressModel.id, onupdate='CASCADE', ondelete='CASCADE'),
-        CheckConstraint('"RealAddressId" <> "AddressId"'),
-        key='real_address_id',
+        CheckConstraint('real_address_id <> address_id'),
     )
     bank_code: Final[Column[int]] = Column(
-        'BankCode',
         BankModel.code.type,
         ForeignKey(BankModel.code, onupdate='CASCADE', ondelete='RESTRICT'),
         nullable=False,
-        key='bank_code',
     )
     bank_account_number: Final[Column[str]] = Column(
-        'BankAccountNumber',
         String(29),
-        CheckConstraint('"BankAccountNumber" <> \'\''),
+        CheckConstraint("bank_account_number <> ''"),
         nullable=False,
-        key='bank_account_number',
     )
 
     bank: Final['RelationshipProperty[BankModel]'] = relationship(

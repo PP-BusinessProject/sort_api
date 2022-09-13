@@ -14,18 +14,14 @@ if TYPE_CHECKING:
 
 class TextModel(Timestamped, Base):
     key: Final[Column[str]] = Column(
-        'Key',
         String(255),
-        CheckConstraint('"Key" <> \'\''),
+        CheckConstraint("key <> ''"),
         primary_key=True,
-        key='key',
     )
     fallback: Final[Column[str]] = Column(
-        'Fallback',
         String(1023),
-        CheckConstraint('"Fallback" <> \'\''),
+        CheckConstraint("fallback <> ''"),
         nullable=False,
-        key='fallback',
     )
 
     locales: Final[

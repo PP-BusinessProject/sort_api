@@ -17,19 +17,14 @@ from .group_right_model import GroupRightModel
 
 class GroupMemberRightModel(Timestamped, Base):
     group_owner_id: Final[Column[int]] = Column(
-        'GroupOwnerId',
         GroupMemberModel.group_owner_id.type,
         primary_key=True,
-        key='group_owner_id',
     )
     user_id: Final[Column[int]] = Column(
-        'UserId',
         GroupMemberModel.user_id.type,
         primary_key=True,
-        key='user_id',
     )
     right_id: Final[Column[int]] = Column(
-        'RightId',
         GroupRightModel.id.type,
         ForeignKey(
             GroupRightModel.id,
@@ -37,7 +32,6 @@ class GroupMemberRightModel(Timestamped, Base):
             ondelete='RESTRICT',
         ),
         primary_key=True,
-        key='right_id',
     )
 
     member: Final['RelationshipProperty[GroupMemberModel]'] = relationship(

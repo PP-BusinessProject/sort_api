@@ -22,14 +22,11 @@ if TYPE_CHECKING:
 
 class ContainerTankModel(Timestamped, Base):
     container_id: Final[Column[int]] = Column(
-        'ContainerId',
         ContainerModel.id.type,
         ForeignKey(ContainerModel.id, onupdate='CASCADE', ondelete='CASCADE'),
         primary_key=True,
-        key='container_id',
     )
     type_id: Final[Column[int]] = Column(
-        'TypeId',
         ContainerTankTypeModel.id.type,
         ForeignKey(
             ContainerTankTypeModel.id,
@@ -37,14 +34,11 @@ class ContainerTankModel(Timestamped, Base):
             ondelete='CASCADE',
         ),
         primary_key=True,
-        key='type_id',
     )
     current_volume: Final[Column[Decimal]] = Column(
-        'CurrentVolume',
         Numeric(8, 8),
         nullable=False,
         default=Decimal(),
-        key='current_volume',
     )
 
     container: Final['RelationshipProperty[ContainerModel]'] = relationship(

@@ -9,34 +9,26 @@ from typing_extensions import Self
 from ...base_interface import Base
 
 if TYPE_CHECKING:
-    from .bonus_category_locale_model import (
-        BonusCategoryLocaleModel,
-    )
     from ..bonus_model import BonusModel
+    from .bonus_category_locale_model import BonusCategoryLocaleModel
 
 
 class BonusCategoryModel(Base):
     id: Final[Column[int]] = Column(
-        'Id',
         Integer,
         primary_key=True,
         autoincrement=True,
-        key='id',
     )
     parent_id: Final[Column[Optional[int]]] = Column(
-        'ParentId',
         id.type,
         ForeignKey(id, onupdate='CASCADE', ondelete='CASCADE'),
-        CheckConstraint('"ParentId" <> "Id"'),
-        key='parent_id',
+        CheckConstraint('parent_id <> "Id"'),
     )
 
     fallback_name: Final[Column[str]] = Column(
-        'FallbackName',
         String(255),
-        CheckConstraint('"FallbackName" <> \'\''),
+        CheckConstraint("fallback_name <> ''"),
         nullable=False,
-        key='fallback_name',
     )
 
     locales: Final[

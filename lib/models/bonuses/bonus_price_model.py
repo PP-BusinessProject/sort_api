@@ -14,25 +14,19 @@ from .bonus_model import BonusModel
 
 class BonusPriceModel(Timestamped, Base):
     bonus_id: Final[Column[int]] = Column(
-        'BonusId',
         BonusModel.id.type,
         ForeignKey(BonusModel.id, onupdate='CASCADE', ondelete='CASCADE'),
         primary_key=True,
-        key='bonus_id',
     )
     price_id: Final[Column[int]] = Column(
-        'PriceId',
         PriceModel.id.type,
         ForeignKey(PriceModel.id, onupdate='CASCADE', ondelete='RESTRICT'),
         primary_key=True,
-        key='price_id',
     )
     value: Final[Column[Decimal]] = Column(
-        'Value',
         Numeric(8, 2),
-        CheckConstraint('"Value" >= 0'),
+        CheckConstraint('value >= 0'),
         nullable=False,
-        key='value',
     )
 
     bonus: Final['RelationshipProperty[BonusModel]'] = relationship(

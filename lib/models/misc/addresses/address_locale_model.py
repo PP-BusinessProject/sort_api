@@ -18,7 +18,6 @@ from .address_model import AddressModel
 
 class AddressLocaleModel(Base):
     address_id: Final[Column[int]] = Column(
-        'AddressId',
         ForeignKey(
             AddressModel.id,
             onupdate='CASCADE',
@@ -26,49 +25,36 @@ class AddressLocaleModel(Base):
         ),
         primary_key=True,
         autoincrement=True,
-        key='address_id',
     )
     locale_language_code: Final[Column[str]] = Column(
-        'LocaleLanguageCode',
         LocaleModel.language_code.type,
         primary_key=True,
-        key='locale_language_code',
     )
     locale_country_code: Final[Column[str]] = Column(
-        'LocaleCountryCode',
         LocaleModel.country_code.type,
         primary_key=True,
-        key='locale_country_code',
     )
 
     country: Final[Column[str]] = Column(
-        'Сountry',
         String(255),
-        CheckConstraint('"Сountry" <> \'\''),
+        CheckConstraint("country <> ''"),
         nullable=False,
         default='Ukraine',
-        key='country',
     )
     state: Final[Column[str]] = Column(
-        'State',
         String(255),
-        CheckConstraint('"State" <> \'\''),
+        CheckConstraint("state <> ''"),
         nullable=False,
-        key='state',
     )
     city: Final[Column[str]] = Column(
-        'City',
         String(255),
-        CheckConstraint('"City" <> \'\''),
+        CheckConstraint("city <> ''"),
         nullable=False,
-        key='city',
     )
     street: Final[Column[str]] = Column(
-        'Street',
         String(255),
-        CheckConstraint('"Street" <> \'\''),
+        CheckConstraint("street <> ''"),
         nullable=False,
-        key='street',
     )
 
     locale: Final['RelationshipProperty[LocaleModel]'] = relationship(

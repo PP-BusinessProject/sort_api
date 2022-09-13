@@ -33,11 +33,9 @@ class UserModel(UserInterface, Timestamped, Base):
     DRIVER_ID: Final[int] = -1000  # and lower
 
     id: Final[Column[int]] = Column(
-        'Id',
         Integer,
         primary_key=True,
         autoincrement=True,
-        key='id',
     )
 
     @hybrid_property

@@ -23,41 +23,32 @@ if TYPE_CHECKING:
 
 class BonusModel(Timestamped, Base):
     owner_id: Final[Column[int]] = Column(
-        'OwnerId',
         UserModel.id.type,
         ForeignKey(UserModel.id, onupdate='CASCADE', ondelete='CASCADE'),
         CheckConstraint(
-            literal_column('"OwnerId"')
+            literal_column('owner_id')
             >= literal_column(str(UserModel.COMPANY_ID))
         ),
         nullable=False,
-        key='owner_id',
     )
     id: Final[Column[int]] = Column(
-        'Id',
         Integer,
         primary_key=True,
         autoincrement=True,
-        key='id',
     )
 
     fallback_name: Final[Column[str]] = Column(
-        'FallbackName',
         String(255),
-        CheckConstraint('"FallbackName" <> \'\''),
+        CheckConstraint("fallback_name <> ''"),
         nullable=False,
-        key='fallback_name',
     )
     fallback_description: Final[Column[str]] = Column(
-        'FallbackDescription',
         String(1023),
         nullable=False,
         default='',
-        key='fallback_description',
     )
 
     category_id: Final[Column[int]] = Column(
-        'CategoryId',
         BonusCategoryModel.id.type,
         ForeignKey(
             BonusCategoryModel.id,
@@ -65,10 +56,8 @@ class BonusModel(Timestamped, Base):
             ondelete='RESTRICT',
         ),
         nullable=False,
-        key='category_id',
     )
     measurement_id: Final[Column[int]] = Column(
-        'MeasurementId',
         MeasurementModel.id.type,
         ForeignKey(
             MeasurementModel.id,
@@ -76,22 +65,17 @@ class BonusModel(Timestamped, Base):
             ondelete='RESTRICT',
         ),
         nullable=False,
-        key='measurement_id',
     )
 
     user_limit: Final[Column[int]] = Column(
-        'UserLimit',
         Integer,
-        CheckConstraint('"UserLimit" >= 0'),
+        CheckConstraint('user_limit >= 0'),
         nullable=False,
         default=0,
-        key='user_limit',
         doc='Coupon limit for a single user.',
     )
     active_till: Final[Column[Optional[datetime]]] = Column(
-        'ActiveTill',
         DateTime(timezone=True),
-        key='active_till',
     )
 
     owner: Final['RelationshipProperty[UserModel]'] = relationship(

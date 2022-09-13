@@ -13,7 +13,6 @@ from .company_model import CompanyModel
 
 class CompanyContactModel(UserInterface, Base):
     company_registry_number: Final[Column[int]] = Column(
-        'CompanyRegistryNumber',
         CompanyModel.registry_number.type,
         ForeignKey(
             CompanyModel.registry_number,
@@ -21,17 +20,13 @@ class CompanyContactModel(UserInterface, Base):
             ondelete='CASCADE',
         ),
         nullable=False,
-        key='company_registry_number',
     )
     id: Final[Column[int]] = Column(
-        'Id',
         Integer,
         primary_key=True,
         autoincrement=True,
-        key='id',
     )
     type_id: Final[Column[int]] = Column(
-        'TypeId',
         CompanyContactTypeModel.id.type,
         ForeignKey(
             CompanyContactTypeModel.id,
@@ -39,7 +34,6 @@ class CompanyContactModel(UserInterface, Base):
             ondelete='CASCADE',
         ),
         nullable=False,
-        key='type_id',
     )
 
     company: Final['RelationshipProperty[CompanyModel]'] = relationship(

@@ -16,21 +16,17 @@ class Timestamped(object):
     def created_at(self: Self, /) -> Column[datetime]:
         """Set the date and time when the instance was created."""
         return Column(
-            'CreatedAt',
             DateTime(timezone=True),
             nullable=False,
             default=lambda: datetime.now(tzlocal()),
-            key='created_at',
         )
 
     @declared_attr
     def updated_at(self: Self, /) -> Column[datetime]:
         """Set the date and time of the last time the instance was updated."""
         return Column(
-            'UpdatedAt',
             DateTime(timezone=True),
             nullable=False,
             default=lambda: datetime.now(tzlocal()),
             onupdate=lambda: datetime.now(tzlocal()),
-            key='updated_at',
         )

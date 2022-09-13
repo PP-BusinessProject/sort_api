@@ -12,7 +12,6 @@ from .bonus_coupon_model import BonusCouponModel
 
 class BonusCouponUseModel(Timestamped, Base):
     coupon_id: Final[Column[int]] = Column(
-        'CouponId',
         BonusCouponModel.id.type,
         ForeignKey(
             BonusCouponModel.id,
@@ -20,22 +19,17 @@ class BonusCouponUseModel(Timestamped, Base):
             ondelete='CASCADE',
         ),
         nullable=False,
-        key='coupon_id',
     )
     id: Final[Column[int]] = Column(
-        'Id',
         Integer,
         primary_key=True,
         autoincrement=True,
-        key='id',
     )
     amount: Final[Column[int]] = Column(
-        'Amount',
         Integer,
-        CheckConstraint('"Amount" > 0'),
+        CheckConstraint('amount > 0'),
         nullable=False,
         default=1,
-        key='amount',
     )
 
     coupon: Final['RelationshipProperty[BonusCouponModel]'] = relationship(

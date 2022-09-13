@@ -12,18 +12,14 @@ from .container_model import ContainerModel
 
 class ContainerImageModel(Timestamped, Base):
     container_id: Final[Column[int]] = Column(
-        'ContainerId',
         ContainerModel.id.type,
         ForeignKey(ContainerModel.id, onupdate='CASCADE', ondelete='CASCADE'),
         primary_key=True,
-        key='container_id',
     )
     image_id: Final[Column[int]] = Column(
-        'ImageId',
         ImageModel.id.type,
         ForeignKey(ImageModel.id, onupdate='CASCADE', ondelete='CASCADE'),
         primary_key=True,
-        key='image_id',
     )
 
     container: Final['RelationshipProperty[ContainerModel]'] = relationship(

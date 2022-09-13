@@ -13,7 +13,6 @@ from .container_tank_opening_model import ContainerTankOpeningModel
 
 class ContainerTankOpeningDropModel(Timestamped, Base):
     opening_id: Final[Column[int]] = Column(
-        'OpeningId',
         ContainerTankOpeningModel.id.type,
         ForeignKey(
             ContainerTankOpeningModel.id,
@@ -21,20 +20,15 @@ class ContainerTankOpeningDropModel(Timestamped, Base):
             ondelete='CASCADE',
         ),
         nullable=False,
-        key='opening_id',
     )
     id: Final[Column[int]] = Column(
-        'Id',
         Integer,
         primary_key=True,
         autoincrement=True,
-        key='id',
     )
     volume: Final[Column[Decimal]] = Column(
-        'Volume',
         Numeric(6, 6),
         nullable=False,
-        key='volume',
     )
 
     opening: Final[

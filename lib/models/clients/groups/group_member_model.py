@@ -44,7 +44,6 @@ class GroupMemberModel(Timestamped, Base):
     """
 
     group_owner_id: Final[Column[int]] = Column(
-        'GroupOwnerId',
         GroupModel.owner_id.type,
         ForeignKey(
             GroupModel.owner_id,
@@ -52,10 +51,8 @@ class GroupMemberModel(Timestamped, Base):
             ondelete='CASCADE',
         ),
         primary_key=True,
-        key='group_owner_id',
     )
     user_id: Final[Column[int]] = Column(
-        'UserId',
         UserModel.id.type,
         ForeignKey(UserModel.id, onupdate='CASCADE', ondelete='CASCADE'),
         CheckConstraint(
@@ -66,12 +63,9 @@ class GroupMemberModel(Timestamped, Base):
             )
         ),
         primary_key=True,
-        key='user_id',
     )
     accepted: Final[Column[Optional[bool]]] = Column(
-        'Accepted',
         Boolean(create_constraint=True),
-        key='accepted',
     )
 
     group: Final['RelationshipProperty[GroupModel]'] = relationship(

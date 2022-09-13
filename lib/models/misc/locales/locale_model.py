@@ -44,18 +44,14 @@ if TYPE_CHECKING:
 
 class LocaleModel(Timestamped, Base):
     language_code: Final[Column[str]] = Column(
-        'LanguageCode',
         CaseInsensitiveUnicode(2),
-        CheckConstraint('"LanguageCode" <> \'\''),
+        CheckConstraint("language_code <> ''"),
         primary_key=True,
-        key='language_code',
     )
     country_code: Final[Column[str]] = Column(
-        'CountryCode',
         CaseInsensitiveUnicode(2),
-        CheckConstraint('"CountryCode" <> \'\''),
+        CheckConstraint("country_code <> ''"),
         primary_key=True,
-        key='country_code',
     )
 
     settings: Final[

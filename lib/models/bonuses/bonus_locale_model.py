@@ -19,38 +19,28 @@ from .bonus_model import BonusModel
 
 class BonusLocaleModel(Timestamped, Base):
     bonus_id: Final[Column[str]] = Column(
-        'BonusId',
         BonusModel.id.type,
         ForeignKey(BonusModel.id, onupdate='CASCADE', ondelete='CASCADE'),
         primary_key=True,
-        key='bonus_id',
     )
     locale_language_code: Final[Column[str]] = Column(
-        'LocaleLanguageCode',
         LocaleModel.language_code.type,
         primary_key=True,
-        key='locale_language_code',
     )
     locale_country_code: Final[Column[str]] = Column(
-        'LocaleCountryCode',
         LocaleModel.country_code.type,
         primary_key=True,
-        key='locale_country_code',
     )
 
     name: Final[Column[str]] = Column(
-        'Name',
         String(255),
-        CheckConstraint('"Name" <> \'\''),
+        CheckConstraint("name <> ''"),
         nullable=False,
-        key='name',
     )
     description: Final[Column[str]] = Column(
-        'Description',
         String(1023),
         nullable=False,
         default='',
-        key='description',
     )
 
     locale: Final['RelationshipProperty[LocaleModel]'] = relationship(
