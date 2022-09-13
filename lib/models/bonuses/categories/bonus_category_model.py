@@ -27,6 +27,7 @@ class BonusCategoryModel(Base):
         'ParentId',
         id.type,
         ForeignKey(id, onupdate='CASCADE', ondelete='CASCADE'),
+        CheckConstraint('"ParentId" <> "Id"'),
         key='parent_id',
     )
 

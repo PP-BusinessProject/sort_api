@@ -9,10 +9,10 @@ from typing_extensions import Self
 from ...base_interface import Base
 
 if TYPE_CHECKING:
+    from ..nomenclature_model import NomenclatureModel
     from .nomenclature_category_locale_model import (
         NomenclatureCategoryLocaleModel,
     )
-    from ..nomenclature_model import NomenclatureModel
 
 
 class NomenclatureCategoryModel(Base):
@@ -27,6 +27,7 @@ class NomenclatureCategoryModel(Base):
         'ParentId',
         id.type,
         ForeignKey(id, onupdate='CASCADE', ondelete='CASCADE'),
+        CheckConstraint('"ParentId" <> "Id"'),
         key='parent_id',
     )
 
