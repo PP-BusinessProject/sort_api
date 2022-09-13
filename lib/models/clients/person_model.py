@@ -23,8 +23,8 @@ class PersonModel(Timestamped, Base):
         CheckConstraint(
             and_(
                 literal_column(str(UserModel.COMPANY_ID))
-                > literal_column('"RefferalId"'),
-                literal_column('"RefferalId"') > literal_column('0'),
+                > literal_column('refferal_id'),
+                literal_column('refferal_id') > literal_column('0'),
             )
         ),
     )

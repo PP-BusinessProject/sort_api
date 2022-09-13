@@ -38,7 +38,7 @@ class CompanyModel(Base):
         UserModel.id.type,
         ForeignKey(UserModel.id, onupdate='CASCADE', ondelete='CASCADE'),
         CheckConstraint(
-            literal_column('"RegistryNumber"')
+            literal_column('registry_number')
             >= literal_column(str(UserModel.COMPANY_ID))
         ),
         primary_key=True,

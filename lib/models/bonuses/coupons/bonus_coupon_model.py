@@ -43,8 +43,8 @@ class BonusCouponModel(Timestamped, Base):
         CheckConstraint(
             and_(
                 literal_column(str(UserModel.COMPANY_ID))
-                > literal_column('"OwnerId"'),
-                literal_column('"OwnerId"') > literal_column('0'),
+                > literal_column('owner_id'),
+                literal_column('owner_id') > literal_column('0'),
             )
         ),
     )

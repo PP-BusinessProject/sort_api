@@ -22,7 +22,7 @@ class BonusCategoryModel(Base):
     parent_id: Final[Column[Optional[int]]] = Column(
         id.type,
         ForeignKey(id, onupdate='CASCADE', ondelete='CASCADE'),
-        CheckConstraint('parent_id <> "Id"'),
+        CheckConstraint('parent_id <> id'),
     )
 
     fallback_name: Final[Column[str]] = Column(

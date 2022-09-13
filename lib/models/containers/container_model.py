@@ -23,7 +23,7 @@ class ContainerModel(Timestamped, Base):
         UserModel.id.type,
         ForeignKey(UserModel.id, onupdate='CASCADE', ondelete='SET NULL'),
         CheckConstraint(
-            literal_column('"OwnerId"')
+            literal_column('owner_id')
             >= literal_column(str(UserModel.COMPANY_ID))
         ),
     )

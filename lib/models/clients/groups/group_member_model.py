@@ -58,8 +58,8 @@ class GroupMemberModel(Timestamped, Base):
         CheckConstraint(
             and_(
                 literal_column(str(UserModel.COMPANY_ID))
-                > literal_column('"UserId"'),
-                literal_column('"UserId"') > literal_column('0'),
+                > literal_column('user_id'),
+                literal_column('user_id') > literal_column('0'),
             )
         ),
         primary_key=True,
