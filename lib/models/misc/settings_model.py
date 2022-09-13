@@ -16,7 +16,7 @@ from .locales.locale_model import LocaleModel
 
 
 class SettingsModel(Timestamped, Base):
-    __tablename__: Final[str] = 'Settings'
+    __tablename__: Final[str] = 'settings'
 
     id: Final[Column[Literal[True]]] = Column(
         Boolean(create_constraint=True),
