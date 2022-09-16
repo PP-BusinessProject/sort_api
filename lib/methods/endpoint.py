@@ -26,6 +26,7 @@ from fastapi.applications import FastAPI
 from fastapi.exceptions import HTTPException
 from fastapi.responses import ORJSONResponse
 from orjson import loads
+from sqlalchemy.ext.asyncio.engine import AsyncEngine
 from sqlalchemy.ext.asyncio.scoping import async_scoped_session
 from sqlalchemy.orm import selectinload
 from sqlalchemy.orm.attributes import InstrumentedAttribute
@@ -62,11 +63,16 @@ async def endpoint(request: Request, /) -> Response:
     return await EndPoint(request)()
 
 
+async def endpoint_info(request: Request, /) -> Response:
+    return await EndPoint(request).info()
+
+
 @dataclass(init=False, frozen=True)
 class EndPoint(object):
 
     request: Final[Request]
     app: Final[FastAPI]
+    engine: Final[AsyncEngine]
     Session: Final[async_scoped_session]
     metadata: Final[MetaData]
 
@@ -81,6 +87,10 @@ class EndPoint(object):
         if not isinstance(app := request.get('app'), FastAPI):
             raise HTTPException(
                 HTTP_500_INTERNAL_SERVER_ERROR, 'App is not present.'
+            )
+        if not isinstance(engine := request.get('engine'), AsyncEngine):
+            raise HTTPException(
+                HTTP_500_INTERNAL_SERVER_ERROR, 'Engine is not present.'
             )
         if not isinstance(
             Session := request.get('Session'), async_scoped_session
@@ -98,9 +108,13 @@ class EndPoint(object):
             )
         object.__setattr__(self, 'request', request)
         object.__setattr__(self, 'app', app)
+        object.__setattr__(self, 'engine', engine)
         object.__setattr__(self, 'Session', Session)
         object.__setattr__(self, 'metadata', metadata)
         object.__setattr__(self, 'Base', request.get('Base'))
+
+    async def info(self: Self, /) -> Response:
+        return Response(str(self.engine.url))
 
     async def __call__(self: Self, /) -> Response:
         route: Final[str] = self.request.path_params.get('route', '').lower()

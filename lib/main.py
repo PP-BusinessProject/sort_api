@@ -4,7 +4,7 @@ from logging import Filter, Logger, LogRecord, basicConfig, getLogger
 from os import environ
 from pathlib import Path
 from typing import Any, Final
-from urllib.parse import unquote, urlparse
+from urllib.parse import unquote
 
 from dateutil.tz.tz import tzlocal
 from fastapi.applications import FastAPI
@@ -26,7 +26,7 @@ from uvicorn import run
 
 from .callbacks.create_visual_schema import create_visual_schema
 from .methods._exception_handlers import sqlalchemy_error_handler
-from .methods.endpoint import endpoint
+from .methods.endpoint import endpoint, endpoint_info
 from .methods.schema import schema
 from .methods.test_database import test_database
 from .middleware.add_to_scope_middleware import AddToScopeMiddleware
@@ -117,6 +117,7 @@ app = FastAPI(
             '/settings/time',
             lambda request: Response(datetime.now(tzlocal()).isoformat()),
         ),
+        Route('/settings/info', endpoint_info),
         *(
             Route(
                 '/'.join(
