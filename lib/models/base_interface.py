@@ -17,6 +17,7 @@ from typing import (
     Type,
     Union,
 )
+from uuid import UUID
 
 from inflect import engine
 from pydantic.main import BaseConfig, BaseModel, create_model
@@ -59,6 +60,8 @@ def serialize(
         return value
     elif isinstance(value, Decimal):
         return float(value)
+    elif isinstance(value, UUID):
+        return str(value)
     elif isinstance(value, bytes):
         return value.decode(encoding)
     elif isinstance(value, timedelta):

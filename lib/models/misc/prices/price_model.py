@@ -9,12 +9,20 @@ from ..._mixins import Timestamped
 from ...base_interface import Base
 
 if TYPE_CHECKING:
-    from ...bonuses.bonus_price_model import BonusPriceModel
-    from ...clients.deals.deal_model import DealModel
+    from ...companies.bonuses.company_bonus_price_model import (
+        CompanyBonusPriceModel,
+    )
+    from ...companies.deals.additions.company_deal_addition_model import (
+        CompanyDealAdditionModel,
+    )
+    from ...companies.deals.company_deal_model import CompanyDealModel
     from ...nomenclatures.nomenclature_price_model import (
         NomenclaturePriceModel,
     )
-    from ...clients.deals.deal_addition_model import DealAdditionModel
+    from ...people.deals.additions.person_deal_addition_model import (
+        PersonDealAdditionModel,
+    )
+    from ...people.deals.person_deal_model import PersonDealModel
     from .price_locale_model import PriceLocaleModel
 
 
@@ -39,26 +47,28 @@ class PriceModel(Timestamped, Base):
         cascade='save-update, merge, expunge, delete, delete-orphan',
         uselist=True,
     )
-    deals: Final['RelationshipProperty[list[DealModel]]'] = relationship(
-        'DealModel',
-        back_populates='fallback_price',
-        lazy='noload',
-        cascade='save-update, merge, expunge, delete, delete-orphan',
-        uselist=True,
-    )
-    deal_additions: Final[
-        'RelationshipProperty[list[DealAdditionModel]]'
+    company_bonuses: Final[
+        'RelationshipProperty[list[CompanyBonusPriceModel]]'
     ] = relationship(
-        'DealAdditionModel',
+        'CompanyBonusPriceModel',
         back_populates='price',
         lazy='noload',
         cascade='save-update, merge, expunge, delete, delete-orphan',
         uselist=True,
     )
-    bonuses: Final[
-        'RelationshipProperty[list[BonusPriceModel]]'
+    company_deals: Final[
+        'RelationshipProperty[list[CompanyDealModel]]'
     ] = relationship(
-        'BonusPriceModel',
+        'CompanyDealModel',
+        back_populates='fallback_price',
+        lazy='noload',
+        cascade='save-update, merge, expunge, delete, delete-orphan',
+        uselist=True,
+    )
+    company_deal_additions: Final[
+        'RelationshipProperty[list[CompanyDealAdditionModel]]'
+    ] = relationship(
+        'CompanyDealAdditionModel',
         back_populates='price',
         lazy='noload',
         cascade='save-update, merge, expunge, delete, delete-orphan',
@@ -68,6 +78,24 @@ class PriceModel(Timestamped, Base):
         'RelationshipProperty[list[NomenclaturePriceModel]]'
     ] = relationship(
         'NomenclaturePriceModel',
+        back_populates='price',
+        lazy='noload',
+        cascade='save-update, merge, expunge, delete, delete-orphan',
+        uselist=True,
+    )
+    person_deals: Final[
+        'RelationshipProperty[list[PersonDealModel]]'
+    ] = relationship(
+        'PersonDealModel',
+        back_populates='fallback_price',
+        lazy='noload',
+        cascade='save-update, merge, expunge, delete, delete-orphan',
+        uselist=True,
+    )
+    person_deal_additions: Final[
+        'RelationshipProperty[list[PersonDealAdditionModel]]'
+    ] = relationship(
+        'PersonDealAdditionModel',
         back_populates='price',
         lazy='noload',
         cascade='save-update, merge, expunge, delete, delete-orphan',

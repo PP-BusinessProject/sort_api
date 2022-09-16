@@ -1,4 +1,5 @@
 from decimal import Decimal
+from uuid import UUID
 
 from fastapi.applications import FastAPI
 from fastapi.exceptions import HTTPException
@@ -11,28 +12,34 @@ from starlette.status import (
     HTTP_500_INTERNAL_SERVER_ERROR,
 )
 
-from ..models.bonuses.bonus_image_model import BonusImageModel
-from ..models.bonuses.bonus_locale_model import BonusLocaleModel
-from ..models.bonuses.bonus_model import BonusModel
-from ..models.bonuses.categories.bonus_category_model import BonusCategoryModel
-from ..models.bonuses.coupons.bonus_coupon_model import BonusCouponModel
-from ..models.clients.deals.deal_addition_model import DealAdditionModel
-from ..models.clients.deals.deal_addition_nomenclature_model import (
-    DealAdditionNomenclatureModel,
+from ..models.auth.user_model import UserModel
+from ..models.companies.bonuses.categories.company_bonus_category_model import (
+    CompanyBonusCategoryModel,
 )
-from ..models.clients.deals.deal_model import DealModel
-from ..models.clients.user_model import UserModel
+from ..models.companies.bonuses.company_bonus_image_model import (
+    CompanyBonusImageModel,
+)
+from ..models.companies.bonuses.company_bonus_locale_model import (
+    CompanyBonusLocaleModel,
+)
+from ..models.companies.bonuses.company_bonus_model import CompanyBonusModel
+from ..models.companies.bonuses.coupons.company_bonus_coupon_model import (
+    CompanyBonusCouponModel,
+)
+from ..models.companies.company_model import CompanyModel
 from ..models.containers.container_model import ContainerModel
 from ..models.containers.tanks.container_tank_model import ContainerTankModel
 from ..models.containers.tanks.container_tank_type_model import (
     ContainerTankTypeModel,
 )
-from ..models.containers.tanks.operations.container_tank_opening_drop_model import (
-    ContainerTankOpeningDropModel,
+from ..models.containers.tanks.operations.openings.container_tank_person_opening_drop_model import (
+    ContainerTankPersonOpeningDropModel,
 )
-from ..models.containers.tanks.operations.container_tank_opening_model import (
-    ContainerTankOpeningModel,
+from ..models.containers.tanks.operations.openings.container_tank_person_opening_model import (
+    ContainerTankPersonOpeningModel,
 )
+from ..models.misc.addresses.address_model import AddressModel
+from ..models.misc.banks.bank_model import BankModel
 from ..models.misc.image_model import ImageModel
 from ..models.misc.locales.locale_model import LocaleModel
 from ..models.misc.measurements.measurement_model import MeasurementModel
@@ -45,6 +52,14 @@ from ..models.nomenclatures.nomenclature_model import NomenclatureModel
 from ..models.nomenclatures.nomenclature_price_model import (
     NomenclaturePriceModel,
 )
+from ..models.people.deals.additions.person_deal_addition_model import (
+    PersonDealAdditionModel,
+)
+from ..models.people.deals.additions.person_deal_addition_nomenclature_model import (
+    PersonDealAdditionNomenclatureModel,
+)
+from ..models.people.deals.person_deal_model import PersonDealModel
+from ..models.people.person_model import PersonModel
 
 
 async def test_database(request: Request, /) -> Response:
@@ -107,26 +122,27 @@ async def test_database(request: Request, /) -> Response:
     for nomenclature in nomenclatures:
         Session.add(nomenclature)
 
-    user = UserModel(
+    user = UserModel()
+    person = PersonModel(
+        user=user,
         fallback_first_name='Тест',
-        phone_number=380683980500,
         deals=[
-            DealModel(
+            PersonDealModel(
                 fallback_price=prices[0],
                 additions=[
-                    DealAdditionModel(
+                    PersonDealAdditionModel(
                         price=prices[0],
                         nomenclatures=[
-                            DealAdditionNomenclatureModel(
+                            PersonDealAdditionNomenclatureModel(
                                 amount=10,
                                 nomenclature=nomenclatures[0],
                             )
                         ],
                     ),
-                    DealAdditionModel(
+                    PersonDealAdditionModel(
                         price=prices[0],
                         nomenclatures=[
-                            DealAdditionNomenclatureModel(
+                            PersonDealAdditionNomenclatureModel(
                                 amount=2,
                                 nomenclature=nomenclatures[1],
                             )
@@ -168,129 +184,148 @@ async def test_database(request: Request, /) -> Response:
         Session.add(container)
 
     openings = [
-        ContainerTankOpeningModel(
-            user=user,
+        ContainerTankPersonOpeningModel(
+            person=person,
             tank=container.tanks[0],
-            nomenclature=user.deals[0].additions[0].nomenclatures[0],
+            nomenclature=person.deals[0].additions[0].nomenclatures[0],
             drops=[
-                ContainerTankOpeningDropModel(volume=Decimal(0.05)),
-                ContainerTankOpeningDropModel(volume=Decimal(0.055)),
+                ContainerTankPersonOpeningDropModel(volume=Decimal(0.05)),
+                ContainerTankPersonOpeningDropModel(volume=Decimal(0.055)),
             ],
         ),
-        ContainerTankOpeningModel(
-            user=user,
+        ContainerTankPersonOpeningModel(
+            person=person,
             tank=container.tanks[1],
-            nomenclature=user.deals[0].additions[1].nomenclatures[0],
+            nomenclature=person.deals[0].additions[1].nomenclatures[0],
             drops=[
-                ContainerTankOpeningDropModel(volume=Decimal(0.01)),
-                ContainerTankOpeningDropModel(volume=Decimal(0.015)),
+                ContainerTankPersonOpeningDropModel(volume=Decimal(0.01)),
+                ContainerTankPersonOpeningDropModel(volume=Decimal(0.015)),
             ],
         ),
     ]
     for opening in openings:
         Session.add(opening)
 
-    company = UserModel(
-        id=32434111,
+    company = CompanyModel(
+        user=user,
+        registry_number=32434111,
         fallback_first_name='Тест',
-        phone_number=380683980499,
+        bank_account_number='UA734578698374659436987543229',
+        address=AddressModel(
+            fallback_state='Дніпропетровська область',
+            fallback_city='Дніпро',
+            fallback_street='вул. Центральна',
+            building=10,
+            postal_code=49000,
+        ),
+        bank=BankModel(
+            code='12345678',
+            fallback_name='НБУ',
+            address=AddressModel(
+                fallback_state='Дніпропетровська область',
+                fallback_city='Дніпро',
+                fallback_street='вул. Центральна',
+                building=20,
+                postal_code=49000,
+            ),
+        ),
     )
 
     bonus_measurement = MeasurementModel(fallback_name='шт')
-    bonus_category = BonusCategoryModel(fallback_name='Їжа')
+    bonus_category = CompanyBonusCategoryModel(fallback_name='Їжа')
     bonuses = [
-        BonusModel(
+        CompanyBonusModel(
             fallback_name='Борщ із печі, зі сливовим соусом',
             images=[
-                BonusImageModel(
+                CompanyBonusImageModel(
                     image=ImageModel(url='https://imgur.com/gho8MNj.png')
                 )
             ],
             locales=[
-                BonusLocaleModel(
+                CompanyBonusLocaleModel(
                     name='Borscht with creamy leckvar',
                     locale=locales[1],
                 )
             ],
         ),
-        BonusModel(
+        CompanyBonusModel(
             fallback_name='Rose Garden',
             images=[
-                BonusImageModel(
+                CompanyBonusImageModel(
                     image=ImageModel(url='https://imgur.com/8WWckD0.png')
                 )
             ],
         ),
-        BonusModel(
+        CompanyBonusModel(
             fallback_name='Тарт з полуницею',
             images=[
-                BonusImageModel(
+                CompanyBonusImageModel(
                     image=ImageModel(url='https://imgur.com/fRAIrly.png')
                 )
             ],
             locales=[
-                BonusLocaleModel(
+                CompanyBonusLocaleModel(
                     name='Tart with strawberry',
                     locale=locales[1],
                 )
             ],
         ),
-        BonusModel(
+        CompanyBonusModel(
             fallback_name='Окрошка на йогурті',
             images=[
-                BonusImageModel(
+                CompanyBonusImageModel(
                     image=ImageModel(url='https://imgur.com/SKdHJuu.png')
                 )
             ],
             locales=[
-                BonusLocaleModel(
+                CompanyBonusLocaleModel(
                     name='Okroshka made from yoghurt',
                     locale=locales[1],
                 )
             ],
         ),
-        BonusModel(
+        CompanyBonusModel(
             fallback_name='Чебурек з яловичиною',
             images=[
-                BonusImageModel(
+                CompanyBonusImageModel(
                     image=ImageModel(url='https://imgur.com/tQbfjKK.png')
                 )
             ],
             locales=[
-                BonusLocaleModel(
+                CompanyBonusLocaleModel(
                     name='Cheburek with beef',
                     locale=locales[1],
                 )
             ],
         ),
-        BonusModel(
+        CompanyBonusModel(
             fallback_name='Піца Маргарита',
             images=[
-                BonusImageModel(
+                CompanyBonusImageModel(
                     image=ImageModel(url='https://imgur.com/SXHWfQ3.png')
                 )
             ],
         ),
-        BonusModel(
+        CompanyBonusModel(
             fallback_name='Кава Американо',
             images=[
-                BonusImageModel(
+                CompanyBonusImageModel(
                     image=ImageModel(url='https://imgur.com/Y82uDQO.png')
                 )
             ],
         ),
-        BonusModel(
+        CompanyBonusModel(
             fallback_name='Cheesecake',
             images=[
-                BonusImageModel(
+                CompanyBonusImageModel(
                     image=ImageModel(url='https://imgur.com/AFoVcqE.png')
                 )
             ],
         ),
-        BonusModel(
+        CompanyBonusModel(
             fallback_name='Еклер Малина-каламансі',
             images=[
-                BonusImageModel(
+                CompanyBonusImageModel(
                     image=ImageModel(url='https://imgur.com/pA049oW.png')
                 )
             ],
@@ -299,8 +334,8 @@ async def test_database(request: Request, /) -> Response:
     for bonus in bonuses:
         bonus.category = bonus_category
         bonus.measurement = bonus_measurement
-        bonus.owner = company
-        bonus.coupons = [BonusCouponModel() for _ in range(5)]
+        bonus.company = company
+        bonus.coupons = [CompanyBonusCouponModel() for _ in range(5)]
         Session.add(bonus)
 
     await Session.commit()

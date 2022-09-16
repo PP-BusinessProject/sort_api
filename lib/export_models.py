@@ -5,6 +5,7 @@ from enum import Enum, Flag
 from logging import basicConfig
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Callable, Optional, Type
+from uuid import UUID
 
 from orjson import dumps
 from sqlalchemy.orm.mapper import Mapper
@@ -82,7 +83,11 @@ async def main(
                 type = column.type.python_type
             if issubclass(type, Decimal):
                 type = float
-            if issubclass(type, list):
+            elif issubclass(type, UUID):
+                type = str
+            elif issubclass(type, dict):
+                type = object
+            elif issubclass(type, list):
                 type, iterable = column.type.item_type.type.python_type, True
             tables[key][column.key] = dict(
                 type=f"%s[{', '.join(type._member_map_)}]"
@@ -90,7 +95,9 @@ async def main(
                 if issubclass(type, Enum)
                 else f'{type.__name__.lower()}[]'
                 if iterable
-                else type.__name__.lower(),
+                else type.__name__.lower()
+                if type != object
+                else None,
                 default=default,
                 doc=column.doc,
                 nullable=bool(
@@ -117,6 +124,7 @@ async def main(
                 doc=relationship.doc,
                 nullable=not relationship.uselist,
                 equality=True,
+                serialize=False,
             )
 
     with open(export_path, 'wb') as export:

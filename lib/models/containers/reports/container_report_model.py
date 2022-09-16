@@ -7,15 +7,19 @@ from sqlalchemy.sql.sqltypes import Integer, String
 
 from ..._mixins import Timestamped
 from ...base_interface import Base
-from ...clients.user_model import UserModel
+from ...people.person_model import PersonModel
 from ..container_model import ContainerModel
 from .container_report_type_model import ContainerReportTypeModel
 
 
 class ContainerReportModel(Timestamped, Base):
-    user_id: Final[Column[Optional[int]]] = Column(
-        UserModel.id.type,
-        ForeignKey(UserModel.id, onupdate='CASCADE', ondelete='NO ACTION'),
+    person_id: Final[Column[Optional[int]]] = Column(
+        PersonModel.user_id.type,
+        ForeignKey(
+            PersonModel.user_id,
+            onupdate='CASCADE',
+            ondelete='NO ACTION',
+        ),
         nullable=False,
     )
     container_id: Final[Column[int]] = Column(

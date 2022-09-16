@@ -10,12 +10,16 @@ from ..misc.measurements.measurement_model import MeasurementModel
 from .categories.nomenclature_category_model import NomenclatureCategoryModel
 
 if TYPE_CHECKING:
-    from ..clients.deals.deal_addition_nomenclature_model import (
-        DealAdditionNomenclatureModel,
+    from ..companies.deals.additions.company_deal_addition_nomenclature_model import (
+        CompanyDealAdditionNomenclatureModel,
     )
-    from ..deliveries.delivery_nomenclature_model import (
-        DeliveryNomenclatureModel,
+    from ..people.deals.additions.person_deal_addition_nomenclature_model import (
+        PersonDealAdditionNomenclatureModel,
     )
+
+    # from ..deliveries.delivery_nomenclature_model import (
+    #     DeliveryNomenclatureModel,
+    # )
     from .nomenclature_image_model import NomenclatureImageModel
     from .nomenclature_locale_model import NomenclatureLocaleModel
     from .nomenclature_price_model import NomenclaturePriceModel
@@ -101,21 +105,31 @@ class NomenclatureModel(Base):
         cascade='save-update, merge, expunge, delete, delete-orphan',
         uselist=True,
     )
-    deal_additions: Final[
-        'RelationshipProperty[list[DealAdditionNomenclatureModel]]'
+
+    company_deal_additions: Final[
+        'RelationshipProperty[list[CompanyDealAdditionNomenclatureModel]]'
     ] = relationship(
-        'DealAdditionNomenclatureModel',
+        'CompanyDealAdditionNomenclatureModel',
         back_populates='nomenclature',
         lazy='noload',
         cascade='save-update, merge, expunge, delete, delete-orphan',
         uselist=True,
     )
-    deliveries: Final[
-        'RelationshipProperty[list[DeliveryNomenclatureModel]]'
+    person_deal_additions: Final[
+        'RelationshipProperty[list[PersonDealAdditionNomenclatureModel]]'
     ] = relationship(
-        'DeliveryNomenclatureModel',
+        'PersonDealAdditionNomenclatureModel',
         back_populates='nomenclature',
         lazy='noload',
         cascade='save-update, merge, expunge, delete, delete-orphan',
         uselist=True,
     )
+    # deliveries: Final[
+    #     'RelationshipProperty[list[DeliveryNomenclatureModel]]'
+    # ] = relationship(
+    #     'DeliveryNomenclatureModel',
+    #     back_populates='nomenclature',
+    #     lazy='noload',
+    #     cascade='save-update, merge, expunge, delete, delete-orphan',
+    #     uselist=True,
+    # )

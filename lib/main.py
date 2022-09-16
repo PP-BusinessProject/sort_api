@@ -76,13 +76,17 @@ sqlalchemy: Final = async_scoped_session(
     ),
     scopefunc=current_task,
 )
+
+
+async def _create_visual_schema() -> None:
+    return await create_visual_schema(Base.metadata, path=schema_path)
+
+
 app = FastAPI(
     version='0.0.1',
     docs_url=None,
     default_response_class=_DefaultORJSONResponse,
-    on_startup=(
-        lambda: create_visual_schema(Base.metadata, path=schema_path),
-    ),
+    on_startup=(_create_visual_schema,),
     exception_handlers={SQLAlchemyError: sqlalchemy_error_handler},
     dependencies=[OAuth2PasswordBearer(tokenUrl='token')],
     middleware=(

@@ -3,13 +3,12 @@ from typing import TYPE_CHECKING, Final, Optional
 
 from sqlalchemy.orm import relationship
 from sqlalchemy.orm.relationships import RelationshipProperty
-from sqlalchemy.sql.elements import literal_column
-from sqlalchemy.sql.schema import CheckConstraint, Column, ForeignKey
+from sqlalchemy.sql.schema import Column, ForeignKey
 from sqlalchemy.sql.sqltypes import Numeric, SmallInteger
 
 from .._mixins import Timestamped
 from ..base_interface import Base
-from ..clients.user_model import UserModel
+from ..companies.company_model import CompanyModel
 from ..misc.addresses.address_model import AddressModel
 
 if TYPE_CHECKING:
@@ -20,11 +19,9 @@ if TYPE_CHECKING:
 
 class ContainerModel(Timestamped, Base):
     owner_id: Final[Column[Optional[int]]] = Column(
-        UserModel.id.type,
-        ForeignKey(UserModel.id, onupdate='CASCADE', ondelete='SET NULL'),
-        CheckConstraint(
-            literal_column('owner_id')
-            >= literal_column(str(UserModel.COMPANY_ID))
+        CompanyModel.user_id.type,
+        ForeignKey(
+            CompanyModel.user_id, onupdate='CASCADE', ondelete='SET NULL'
         ),
     )
     id: Final[Column[int]] = Column(
@@ -45,8 +42,10 @@ class ContainerModel(Timestamped, Base):
         ForeignKey(AddressModel.id, onupdate='CASCADE', ondelete='RESTRICT'),
     )
 
-    owner: Final['RelationshipProperty[UserModel]'] = relationship(
-        'UserModel',
+    owner: Final[
+        'RelationshipProperty[Optional[CompanyModel]]'
+    ] = relationship(
+        'CompanyModel',
         back_populates='containers',
         lazy='noload',
         cascade='save-update',

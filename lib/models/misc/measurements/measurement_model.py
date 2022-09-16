@@ -9,12 +9,12 @@ from ..._mixins import Timestamped
 from ...base_interface import Base
 
 if TYPE_CHECKING:
-    from ...nomenclatures.nomenclature_model import NomenclatureModel
+    from ...companies.bonuses.company_bonus_model import CompanyBonusModel
     from ...containers.tanks.container_tank_type_model import (
         ContainerTankTypeModel,
     )
+    from ...nomenclatures.nomenclature_model import NomenclatureModel
     from .measurement_locale_model import MeasurementLocaleModel
-    from ...bonuses.bonus_model import BonusModel
 
 
 class MeasurementModel(Timestamped, Base):
@@ -38,8 +38,10 @@ class MeasurementModel(Timestamped, Base):
         cascade='save-update, merge, expunge, delete, delete-orphan',
         uselist=True,
     )
-    bonuses: Final['RelationshipProperty[list[BonusModel]]'] = relationship(
-        'BonusModel',
+    company_bonuses: Final[
+        'RelationshipProperty[list[CompanyBonusModel]]'
+    ] = relationship(
+        'CompanyBonusModel',
         back_populates='measurement',
         lazy='noload',
         cascade='save-update, merge, expunge, delete, delete-orphan',

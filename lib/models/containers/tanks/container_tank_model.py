@@ -12,11 +12,14 @@ from ..container_model import ContainerModel
 from .container_tank_type_model import ContainerTankTypeModel
 
 if TYPE_CHECKING:
-    from .operations.container_tank_clearing_model import (
-        ContainerTankClearingModel,
+    # from .operations.container_tank_clearing_model import (
+    #     ContainerTankClearingModel,
+    # )
+    from .operations.openings.container_tank_company_opening_model import (
+        ContainerTankCompanyOpeningModel,
     )
-    from .operations.container_tank_opening_model import (
-        ContainerTankOpeningModel,
+    from .operations.openings.container_tank_person_opening_model import (
+        ContainerTankPersonOpeningModel,
     )
 
 
@@ -55,21 +58,30 @@ class ContainerTankModel(Timestamped, Base):
         cascade='save-update',
         uselist=False,
     )
-    openings: Final[
-        'RelationshipProperty[list[ContainerTankOpeningModel]]'
+    company_openings: Final[
+        'RelationshipProperty[list[ContainerTankCompanyOpeningModel]]'
     ] = relationship(
-        'ContainerTankOpeningModel',
+        'ContainerTankCompanyOpeningModel',
         back_populates='tank',
         lazy='noload',
         cascade='save-update, merge, expunge, delete, delete-orphan',
         uselist=True,
     )
-    clearings: Final[
-        'RelationshipProperty[list[ContainerTankClearingModel]]'
+    person_openings: Final[
+        'RelationshipProperty[list[ContainerTankPersonOpeningModel]]'
     ] = relationship(
-        'ContainerTankClearingModel',
+        'ContainerTankPersonOpeningModel',
         back_populates='tank',
         lazy='noload',
         cascade='save-update, merge, expunge, delete, delete-orphan',
         uselist=True,
     )
+    # clearings: Final[
+    #     'RelationshipProperty[list[ContainerTankClearingModel]]'
+    # ] = relationship(
+    #     'ContainerTankClearingModel',
+    #     back_populates='tank',
+    #     lazy='noload',
+    #     cascade='save-update, merge, expunge, delete, delete-orphan',
+    #     uselist=True,
+    # )

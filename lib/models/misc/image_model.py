@@ -9,10 +9,13 @@ from .._mixins import Timestamped
 from ..base_interface import Base
 
 if TYPE_CHECKING:
-    from ..bonuses.bonus_image_model import BonusImageModel
-
+    from ..companies.bonuses.company_bonus_image_model import (
+        CompanyBonusImageModel,
+    )
+    from ..companies.company_image_model import CompanyImageModel
     from ..containers.container_image_model import ContainerImageModel
     from ..nomenclatures.nomenclature_image_model import NomenclatureImageModel
+    from ..people.person_image_model import PersonImageModel
 
 
 class ImageModel(Timestamped, Base):
@@ -27,10 +30,19 @@ class ImageModel(Timestamped, Base):
         nullable=False,
     )
 
-    bonuses: Final[
-        'RelationshipProperty[list[BonusImageModel]]'
+    companies: Final[
+        'RelationshipProperty[list[CompanyImageModel]]'
     ] = relationship(
-        'BonusImageModel',
+        'CompanyImageModel',
+        back_populates='image',
+        lazy='noload',
+        cascade='save-update, merge, expunge, delete, delete-orphan',
+        uselist=True,
+    )
+    company_bonuses: Final[
+        'RelationshipProperty[list[CompanyBonusImageModel]]'
+    ] = relationship(
+        'CompanyBonusImageModel',
         back_populates='image',
         lazy='noload',
         cascade='save-update, merge, expunge, delete, delete-orphan',
@@ -49,6 +61,15 @@ class ImageModel(Timestamped, Base):
         'RelationshipProperty[list[NomenclatureImageModel]]'
     ] = relationship(
         'NomenclatureImageModel',
+        back_populates='image',
+        lazy='noload',
+        cascade='save-update, merge, expunge, delete, delete-orphan',
+        uselist=True,
+    )
+    people: Final[
+        'RelationshipProperty[list[PersonImageModel]]'
+    ] = relationship(
+        'PersonImageModel',
         back_populates='image',
         lazy='noload',
         cascade='save-update, merge, expunge, delete, delete-orphan',

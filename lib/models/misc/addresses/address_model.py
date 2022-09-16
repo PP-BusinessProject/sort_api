@@ -13,9 +13,10 @@ from typing_extensions import Self
 from ...base_interface import Base
 
 if TYPE_CHECKING:
-    from ...clients.companies.company_model import CompanyModel
+    from ...companies.company_model import CompanyModel
     from ...containers.container_model import ContainerModel
-    from ...deliveries.delivery_model import DeliveryModel
+
+    # from ...deliveries.delivery_model import DeliveryModel
     from ..banks.bank_model import BankModel
     from .address_locale_model import AddressLocaleModel
 
@@ -119,10 +120,10 @@ class AddressModel(Base):
         cascade='save-update, merge, expunge, delete, delete-orphan',
         uselist=True,
     )
-    deliveries: Final['RelationshipProperty[DeliveryModel]'] = relationship(
-        'DeliveryModel',
-        back_populates='address',
-        lazy='noload',
-        cascade='save-update, merge, expunge, delete, delete-orphan',
-        uselist=True,
-    )
+    # deliveries: Final['RelationshipProperty[DeliveryModel]'] = relationship(
+    #     'DeliveryModel',
+    #     back_populates='address',
+    #     lazy='noload',
+    #     cascade='save-update, merge, expunge, delete, delete-orphan',
+    #     uselist=True,
+    # )
