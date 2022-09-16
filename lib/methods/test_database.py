@@ -222,7 +222,7 @@ async def test_database(request: Request, /) -> Response:
             postal_code=49000,
         ),
         bank=BankModel(
-            code='12345678',
+            code=12345678,
             fallback_name='НБУ',
             address=AddressModel(
                 fallback_state='Дніпропетровська область',
