@@ -4,11 +4,13 @@ from uuid import UUID
 from fastapi.applications import FastAPI
 from fastapi.exceptions import HTTPException
 from sqlalchemy.ext.asyncio.scoping import async_scoped_session
+from sqlalchemy.sql.expression import select
 from sqlalchemy.sql.schema import MetaData
 from starlette.requests import Request
 from starlette.responses import Response
 from starlette.status import (
     HTTP_204_NO_CONTENT,
+    HTTP_404_NOT_FOUND,
     HTTP_500_INTERNAL_SERVER_ERROR,
 )
 
@@ -122,7 +124,8 @@ async def test_database(request: Request, /) -> Response:
     for nomenclature in nomenclatures:
         Session.add(nomenclature)
 
-    user = UserModel()
+    if (user := await Session.scalar(select(UserModel))) is None:
+        raise HTTPException(HTTP_404_NOT_FOUND, 'User is not found.')
     person = PersonModel(
         user=user,
         fallback_first_name='Тест',
