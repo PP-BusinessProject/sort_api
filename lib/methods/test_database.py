@@ -209,7 +209,7 @@ async def test_database(request: Request, /) -> Response:
     company = CompanyModel(
         user=user,
         registry_number=32434111,
-        fallback_first_name='Тест',
+        fallback_name='Тест',
         bank_account_number='UA734578698374659436987543229',
         address=AddressModel(
             fallback_state='Дніпропетровська область',
